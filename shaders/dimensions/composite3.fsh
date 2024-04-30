@@ -77,7 +77,7 @@ uniform float darknessLightFactor;
 
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
+#define  projMAD(m, v) (((m) * vec4(v, 1.0)).xyz)
 
 float ld(float depth) {
     return 1.0 / (zMults.y - depth * zMults.z);		// (-depth * (far - near)) = (2.0 * near)/ld - far - near
@@ -89,9 +89,8 @@ vec3 toLinear(vec3 sRGB){
 	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
 }
 vec3 toScreenSpace(vec3 p) {
-	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
     vec3 p3 = p * 2. - 1.;
-    vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
+    vec4 fragposition = gbufferProjectionInverse * vec4(p3, 1.0);
     return fragposition.xyz / fragposition.w;
 }
 

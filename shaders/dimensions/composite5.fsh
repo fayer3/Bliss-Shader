@@ -294,18 +294,14 @@ vec3 toScreenSpace_DH_special(vec3 POS, bool depthCheck ) {
 	vec4 iProjDiag = vec4(0.0);
 	#ifdef DISTANT_HORIZONS
     	if (depthCheck) {
-			iProjDiag = vec4(dhProjectionInverse[0].x, dhProjectionInverse[1].y, dhProjectionInverse[2].zw);
-
     		feetPlayerPos = POS * 2.0 - 1.0;
-    		viewPos = iProjDiag * feetPlayerPos.xyzz + dhProjectionInverse[3];
+    		viewPos = dhProjectionInverse * vec4(feetPlayerPos, 1.0);
 			viewPos.xyz /= viewPos.w;
 
 		} else {
 	#endif
-			iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
-
     		feetPlayerPos = POS * 2.0 - 1.0;
-    		viewPos = iProjDiag * feetPlayerPos.xyzz + gbufferProjectionInverse[3];
+    		viewPos = gbufferProjectionInverse * vec4(feetPlayerPos, 1.0);
 			viewPos.xyz /= viewPos.w;
 			
 	#ifdef DISTANT_HORIZONS

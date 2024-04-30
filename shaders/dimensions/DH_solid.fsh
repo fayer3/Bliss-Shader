@@ -49,15 +49,14 @@ float encodeVec2(float x,float y){
 
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
+#define  projMAD(m, v) (((m) * vec4(v, 1.0)).xyz)
 
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferProjectionInverse;
 
 vec3 toScreenSpace(vec3 p) {
-	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
     vec3 feetPlayerPos = p * 2. - 1.;
-    vec4 viewPos = iProjDiag * feetPlayerPos.xyzz + gbufferProjectionInverse[3];
+	vec4 viewPos = gbufferProjectionInverse * vec4(feetPlayerPos, 1.0);
     return viewPos.xyz / viewPos.w;
 }
 

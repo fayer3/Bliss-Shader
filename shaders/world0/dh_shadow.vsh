@@ -26,7 +26,7 @@ flat varying int water;
 #include "/lib/Shadow_Params.glsl"
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
+#define  projMAD(m, v) (((m) * vec4(v, 1.0)).xyz)
 
 // uniform float far;
 uniform float dhFarPlane;

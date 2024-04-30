@@ -71,7 +71,7 @@ vec2 linear_step(vec2 edge0, vec2 edge1, vec2 x) {
 }
 
 vec4 project(mat4 m, vec3 pos) {
-    return vec4(m[0].x, m[1].y, m[2].zw) * pos.xyzz + m[3];
+	return m * vec4(pos, 1.0);
 }
 vec3 project_and_divide(mat4 m, vec3 pos) {
     vec4 homogenous = project(m, pos);

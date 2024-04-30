@@ -14,7 +14,7 @@
 
 
 #define diagonal3_old(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD_old(m, v) (diagonal3_old(m) * (v) + (m)[3].xyz)
+#define  projMAD_old(m, v) (((m) * vec4(v, 1.0)).xyz)
 
 const bool colortex5MipmapEnabled = true;
 
@@ -150,9 +150,8 @@ float convertHandDepth_2(in float depth, bool hand) {
 }
 
 vec3 toScreenSpace(vec3 p) {
-	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
     vec3 feetPlayerPos = p * 2. - 1.;
-    vec4 viewPos = iProjDiag * feetPlayerPos.xyzz + gbufferProjectionInverse[3];
+    vec4 viewPos = gbufferProjectionInverse * vec4(feetPlayerPos, 1.0);
     return viewPos.xyz / viewPos.w;
 }
 

@@ -75,9 +75,8 @@ flat varying vec3 WsunVec2;
 #include "/lib/DistantHorizons_projections.glsl"
 
 vec3 DH_toScreenSpace(vec3 p) {
-	vec4 iProjDiag = vec4(dhProjectionInverse[0].x, dhProjectionInverse[1].y, dhProjectionInverse[2].zw);
     vec3 feetPlayerPos = p * 2. - 1.;
-    vec4 viewPos = iProjDiag * feetPlayerPos.xyzz + dhProjectionInverse[3];
+	vec4 viewPos = dhProjectionInverse * vec4(feetPlayerPos, 1.0);
     return viewPos.xyz / viewPos.w;
 }
 

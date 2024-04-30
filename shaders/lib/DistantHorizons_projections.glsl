@@ -13,18 +13,14 @@ vec3 toScreenSpace_DH( vec2 texcoord, float depth, float DHdepth ) {
 	#ifdef DISTANT_HORIZONS
     	if (depth < 1.0) {
 	#endif
-			iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
-
     		feetPlayerPos = vec3(texcoord, depth) * 2.0 - 1.0;
-    		viewPos = iProjDiag * feetPlayerPos.xyzz + gbufferProjectionInverse[3];
+			viewPos = gbufferProjectionInverse * vec4(feetPlayerPos, 1.0);
 			viewPos.xyz /= viewPos.w;
 	
 	#ifdef DISTANT_HORIZONS
 		} else {
-			iProjDiag = vec4(dhProjectionInverse[0].x, dhProjectionInverse[1].y, dhProjectionInverse[2].zw);
-
     		feetPlayerPos = vec3(texcoord, DHdepth) * 2.0 - 1.0;
-    		viewPos = iProjDiag * feetPlayerPos.xyzz + dhProjectionInverse[3];
+			viewPos = dhProjectionInverse * vec4(feetPlayerPos, 1.0);
 			viewPos.xyz /= viewPos.w;
 		}
 	#endif
