@@ -43,8 +43,9 @@ void main() {
 					uint blockData = imageLoad(imgBlockData, int(blockId)).r;
 					if (unpackUnorm4x8(blockData.r).a > 0) {
 						uvec3 posU = uvec3(pos + 15);
+						float dist = min(length(vec3(pos) - fract(cameraPosition)), 15.9);
 						if (clamp(posU, uvec3(0), uvec3(31)) == posU) {
-							uint data = uint(length(vec3(pos) - fract(cameraPosition))*4) << 26 | posU.x << 21 | posU.y << 16 | posU.z << 11 | blockId;
+							uint data = uint(dist*4) << 26 | posU.x << 21 | posU.y << 16 | posU.z << 11 | blockId;
 							for (int i = 0; i < 9; i++) {
 								uint minData = min(allData[i], data);
 								if (minData == data) data = allData[i];
