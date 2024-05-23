@@ -27,8 +27,9 @@ uniform vec3 cameraPosition;
 #include "/lib/text.glsl"
 #include "/lib/cube/lightData.glsl"
 
-#if DEBUG_VIEW == debug_LIGHTS || DEBUG_VIEW == debug_SHADOWMAP 
+#if DEBUG_VIEW == debug_LIGHTS && defined LPV_SHADOWS
   uniform usampler1D texCloseLights;
+  uniform usampler3D texSortLights;
 #endif
 
 uniform int hideGUI;
@@ -197,6 +198,9 @@ void main() {
   #endif
 
   #if DEBUG_VIEW == debug_LIGHTS || DEBUG_VIEW == debug_SHADOWMAP 
+    ivec2 coords = ivec2((texcoord-vec2(0.75, 0)) * vec2(4.0, 2.0) * textureSize(texSortLights, 0).xy);
+    if(texcoord.x > 0.75 && texcoord.y < 0.5) FINAL_COLOR.rgb = vec3(texelFetch(texSortLights, ivec3(coords, int(frameTimeCounter*2.0)%textureSize(texSortLights, 0).z), 0).rgb/4294967295.0);
+  
     beginText(ivec2(gl_FragCoord.xy*0.25), ivec2(0, viewHeight*0.25));
     for (int i = 0; i < 9; i++) {
       uint data = texelFetch(texCloseLights, i, 0).r;
@@ -221,12 +225,41 @@ void main() {
       }
       printLine();
     }
+    printLine();
+    for (int i = 0; i < 9; i++) {
+      uint data = texelFetch(texSortLights, ivec3(0,0,i), 0).r;
+      printString((_L, _i, _g, _h, _t, _space));
+      printInt(i);
+      float dist;
+      ivec3 pos;
+      uint id;
+      if (!getLightData(data, dist, pos, id)) {
+        printString((_colon, _space, _n, _u, _l, _l));
+      } else {
+        printString((_colon, _space, _d, _colon, _space));
+        printFloat(dist);
+        printString((_comma, _space, _x, _colon, _space));
+        printInt(pos.x - 15);
+        printString((_comma, _space, _y, _colon, _space));
+        printInt(pos.y - 15);
+        printString((_comma, _space, _z, _colon, _space));
+        printInt(pos.z - 15);
+        printString((_comma, _space, _i, _d, _colon, _space));
+        printInt(int(id));
+      }
+      printLine();
+    }
+    endText(FINAL_COLOR);
+    
+    beginText(ivec2(gl_FragCoord.xy*0.25), ivec2(viewWidth*0.19, viewHeight*0.135));
+    printString((_L, _i, _g, _h, _t, _colon, _space));
+    printInt(int(frameTimeCounter*2.0)%textureSize(texSortLights, 0).z);
     endText(FINAL_COLOR);
   #endif
   
   gl_FragColor.rgb = FINAL_COLOR;
 
-  #if DEBUG_VIEW == debug_SHADOWMAP 
+  #if DEBUG_VIEW == debug_SHADOWMAP || (DEBUG_VIEW == debug_LIGHTS && defined LPV_SHADOWS)
     if(texcoord.x < 0.25 && texcoord.y < 0.5) gl_FragColor.rgb = texture2D(shadowcolor0, (texcoord * vec2(2.0, 1.0) * 2 - vec2(0.0, 0.0)) ).rgb;
   #endif
 }

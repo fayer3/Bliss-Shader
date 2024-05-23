@@ -27,10 +27,15 @@ float blueNoise(){
 
 
 void main() {
-	if (render >= 0 && (any(lessThan(gl_FragCoord.xy, minBounds[render >> 4] + renderBounds[render  & 15])) || any(greaterThan(gl_FragCoord.xy, maxBounds[render >> 4] + renderBounds[render & 15])))) {
-		discard;
-		return;
-	}
+	#if defined LPV_SHADOWS && defined IS_LPV_ENABLED && defined LPV_ENABLED
+		if (render >= 0 && (
+			any(lessThan(gl_FragCoord.xy, minBounds[render >> 4] + renderBounds[render  & 15])) ||
+			any(greaterThan(gl_FragCoord.xy, maxBounds[render >> 4] + renderBounds[render & 15]))))
+			{
+			discard;
+			return;
+		}
+	#endif
 	gl_FragData[0] = vec4(texture2D(tex,Ftexcoord.xy).rgb * Fcolor.rgb,  texture2DLod(tex, Ftexcoord.xy, 0).a);
 
   	#ifdef Stochastic_Transparent_Shadows
