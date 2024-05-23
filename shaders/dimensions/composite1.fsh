@@ -970,7 +970,7 @@ void main() {
 		#endif
 
 		projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5) ;
-
+projectedShadowPosition.xy *= 0.8;
 		float ShadowAlpha = 0.0; // this is for subsurface scattering later.
 		Shadows = ComputeShadowMap(projectedShadowPosition, distortFactor, noise_2, filteredShadow.x, flatNormNdotL, shadowMapFalloff, DirectLightColor, ShadowAlpha, LabSSS > 0.0);
 
@@ -1082,7 +1082,7 @@ void main() {
 			const vec3 lpvPos = vec3(0.0);
 		#endif
 
-		Indirect_lighting = DoAmbientLightColor(feetPlayerPos, lpvPos, Indirect_lighting, MinimumLightColor, vec3(TORCH_R,TORCH_G,TORCH_B) , lightmap.xy, exposure);
+		Indirect_lighting = DoAmbientLightColor(feetPlayerPos, lpvPos, Indirect_lighting, MinimumLightColor, vec3(TORCH_R,TORCH_G,TORCH_B) , lightmap.xy, exposure, viewToWorld(FlatNormals));
 		
 		#ifdef OVERWORLD_SHADER
 			Indirect_lighting += LightningFlashLighting;

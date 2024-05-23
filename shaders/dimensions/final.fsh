@@ -24,6 +24,12 @@ uniform vec3 cameraPosition;
 #include "/lib/color_transforms.glsl"
 #include "/lib/color_dither.glsl"
 #include "/lib/res_params.glsl"
+#include "/lib/text.glsl"
+#include "/lib/cube/lightData.glsl"
+
+#if DEBUG_VIEW == debug_LIGHTS || DEBUG_VIEW == debug_SHADOWMAP 
+  uniform usampler1D texCloseLights;
+#endif
 
 uniform int hideGUI;
 
@@ -190,6 +196,34 @@ void main() {
     doCameraGridLines(FINAL_COLOR, texcoord);
   #endif
 
+  #if DEBUG_VIEW == debug_LIGHTS || DEBUG_VIEW == debug_SHADOWMAP 
+    beginText(ivec2(gl_FragCoord.xy*0.25), ivec2(0, viewHeight*0.25));
+    for (int i = 0; i < 9; i++) {
+      uint data = texelFetch(texCloseLights, i, 0).r;
+      printString((_L, _i, _g, _h, _t, _space));
+      printInt(i);
+      float dist;
+      ivec3 pos;
+      uint id;
+      if (!getLightData(data, dist, pos, id)) {
+        printString((_colon, _space, _n, _u, _l, _l));
+      } else {
+        printString((_colon, _space, _d, _colon, _space));
+        printFloat(dist);
+        printString((_comma, _space, _x, _colon, _space));
+        printInt(pos.x - 15);
+        printString((_comma, _space, _y, _colon, _space));
+        printInt(pos.y - 15);
+        printString((_comma, _space, _z, _colon, _space));
+        printInt(pos.z - 15);
+        printString((_comma, _space, _i, _d, _colon, _space));
+        printInt(int(id));
+      }
+      printLine();
+    }
+    endText(FINAL_COLOR);
+  #endif
+  
   gl_FragColor.rgb = FINAL_COLOR;
 
   #if DEBUG_VIEW == debug_SHADOWMAP 

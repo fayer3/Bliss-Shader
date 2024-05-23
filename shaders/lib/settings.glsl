@@ -741,7 +741,8 @@ const vec3 aerochrome_color = mix(vec3(1.0, 0.0, 0.0), vec3(0.715, 0.303, 0.631)
 #define debug_DH_WATER_BLENDING 7
 #define debug_FILTERED_STUFF 8
 #define debug_TEMPORAL_REPROJECTION 9
-#define DEBUG_VIEW debug_OFF // [debug_OFF debug_SHADOWMAP debug_NORMALS debug_SPECULAR debug_INDIRECT debug_DIRECT debug_VIEW_POSITION debug_DH_WATER_BLENDING debug_FILTERED_STUFF debug_TEMPORAL_REPROJECTION]
+#define debug_LIGHTS 10
+#define DEBUG_VIEW debug_OFF // [debug_OFF debug_SHADOWMAP debug_NORMALS debug_SPECULAR debug_INDIRECT debug_DIRECT debug_VIEW_POSITION debug_DH_WATER_BLENDING debug_FILTERED_STUFF debug_TEMPORAL_REPROJECTION debug_LIGHTS]
 
 /////////////////////////////////
 // ----- RANDOM SETTINGS ----- //

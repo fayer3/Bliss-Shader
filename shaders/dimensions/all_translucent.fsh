@@ -355,7 +355,7 @@ float ComputeShadowMap(inout vec3 directLightColor, vec3 playerPos, float maxDis
 
 	// hamburger
 	projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5);
-	
+	projectedShadowPosition.xy *= 0.8;
 	float shadowmap = 0.0;
 	vec3 translucentTint = vec3(0.0);
 
@@ -722,7 +722,7 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 		const vec3 lpvPos = vec3(0.0);
 	#endif
 
-	Indirect_lighting = DoAmbientLightColor(feetPlayerPos, lpvPos, AmbientLightColor, MinimumLightColor, vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.xy, exposure);
+	Indirect_lighting = DoAmbientLightColor(feetPlayerPos, lpvPos, AmbientLightColor, MinimumLightColor, vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.xy, exposure, worldSpaceNormal);
 	
 	vec3 FinalColor = (Indirect_lighting + Direct_lighting) * Albedo;
 

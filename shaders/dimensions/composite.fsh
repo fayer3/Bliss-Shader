@@ -495,6 +495,7 @@ void main() {
 					float distortThresh = (sqrt(1.0-NdotL*NdotL)/NdotL+0.7)/distortFactor;
 					float diffthresh = distortThresh/6000.0*threshMul;
 					projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
+					projectedShadowPosition.xy *= 0.8;
 
 					float mult = maxshadowfilt;
 					float avgBlockerDepth = 0.0;

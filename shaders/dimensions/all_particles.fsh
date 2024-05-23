@@ -54,6 +54,7 @@ uniform mat4 gbufferModelView;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
+uniform vec3 previousCameraPosition;
 
 uniform float frameTimeCounter;
 #include "/lib/Shadow_Params.glsl"
@@ -151,7 +152,7 @@ float ComputeShadowMap(inout vec3 directLightColor, vec3 playerPos, float maxDis
 
 	// hamburger
 	projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5);
-	
+	projectedShadowPosition.xy *= 0.8;
 	float shadowmap = 0.0;
 	vec3 translucentTint = vec3(0.0);
 
@@ -375,13 +376,13 @@ void main() {
 		gl_FragData[1] = vec4(0.0,0.0,0.0,TEXTURE.a); // for bloomy rain and stuff
 	#endif
 
-	#ifndef WEATHER
+	//#ifndef WEATHER
 		#ifndef LINES
 			gl_FragData[0].a = TEXTURE.a;
 		#else
 			gl_FragData[0].a = 1.0;
 		#endif
-		#ifndef BLOOMY_PARTICLES
+		#if !defined BLOOMY_PARTICLES && !defined WEATHER
 			gl_FragData[1].a = 0.0; // for bloomy rain and stuff
 		#endif
 
@@ -431,7 +432,7 @@ void main() {
 			const vec3 lpvPos = vec3(0.0);
 		#endif
 
-		Indirect_lighting = DoAmbientLightColor(feetPlayerPos, lpvPos, AmbientLightColor, MinimumLightColor, Torch_Color, clamp(lightmap.xy,0,1), exposure);
+		Indirect_lighting = DoAmbientLightColor(feetPlayerPos, lpvPos, AmbientLightColor, MinimumLightColor, Torch_Color, clamp(lightmap.xy,0,1), exposure, mat3(gbufferModelViewInverse)*vec3(0,1,0));
 
 		#ifdef LINES
 			gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * toLinear(color.rgb);
@@ -444,6 +445,6 @@ void main() {
 
 		gl_FragData[0].rgb *= 0.1;
 
-	#endif
+	//#endif
 #endif
 }

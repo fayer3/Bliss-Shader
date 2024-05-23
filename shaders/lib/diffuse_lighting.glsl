@@ -19,6 +19,45 @@
 
         return lightFinal;
     }
+    #include "/lib/cube/cubeData.glsl"
+    #include "/lib/cube/lightData.glsl"
+
+    uniform usampler1D texCloseLights;
+    
+    vec3 worldToCube(vec3 worldPos, out int faceIndex) {
+        vec3 worldPosAbs = abs(worldPos);
+        /*
+        	cubeBack, 0
+            cubeTop, 1
+            cubeDown, 2
+            cubeLeft, 3
+            cubeForward, 4
+            cubeRight 5
+        */
+        if (worldPosAbs.z >= worldPosAbs.x && worldPosAbs.z >= worldPosAbs.y) {
+            // looking in z direction (forward | back)
+            faceIndex = worldPos.z <= 0.0 ? 0 : 4;
+        }
+        else if (worldPosAbs.y >= worldPosAbs.x) {
+            // looking in y direction (up | down)
+            faceIndex = worldPos.y <= 0.0 ? 2 : 1;
+        }
+        else {
+            // looking in x direction (left | right)
+            faceIndex = worldPos.x <= 0.0 ? 5 : 3;
+        }
+        vec4 coord = cubeProjection * directionMatices[faceIndex] * vec4(worldPos, 1.0);
+        coord.xyz /= coord.w;
+        return coord.xyz * 0.5 + 0.5;
+    }
+
+    vec2 cubeOffset(vec2 relativeCoord, int faceIndex, int cube) {
+        return relativeCoord*cubeTileRelativeResolution + cubeFaceOffsets[faceIndex] + renderOffsets[cube];
+    }
+
+    float getCubeShadow(vec3 cubeShadowPos, int faceIndex, int cube) {
+        return texture(shadowtex0, vec3(cubeOffset(cubeShadowPos.xy, faceIndex, cube), cubeShadowPos.z));
+    }
 #endif
 
 vec3 DoAmbientLightColor(
@@ -28,7 +67,8 @@ vec3 DoAmbientLightColor(
     vec3 MinimumColor,
     vec3 TorchColor, 
     vec2 Lightmap,
-    float Exposure
+    float Exposure,
+    vec3 normalWorld
 ){
 	// Lightmap = vec2(0.0,1.0);
 
@@ -64,6 +104,29 @@ vec3 DoAmbientLightColor(
 
         if (heldItemId2 > 0)
             TorchLight += GetHandLight(heldItemId2, playerPos, normal);
+        
+        for(int i = 0; i < 9; i++){
+            uint data = texelFetch(texCloseLights, i, 0).r;
+            float dist;
+            ivec3 pos;
+            uint blockId;
+            if (getLightData(data, dist, pos, blockId)) {
+                vec3 lightPos = -fract(previousCameraPosition + cameraPosition-previousCameraPosition) + vec3(pos) - 14.5;
+                int face = 0;
+                vec3 dir = playerPos - lightPos;
+                if (dot(normalWorld, dir) < 0) {
+                    uint blockData = texelFetch(texBlockData, int(blockId), 0).r;
+                    vec4 lightColorRange = unpackUnorm4x8(blockData);
+                    lightColorRange.a *= 255.0;
+                    if (length(dir) < lightColorRange.a) {
+                        vec3 pos = worldToCube(dir + normalWorld * 0.05, face);
+                        TorchLight += lightColorRange.rgb * getCubeShadow(pos, face, i) * pow((1.0 - length(dir) / lightColorRange.a), 2.0);
+                    }
+                }
+            } else {
+                break;
+            }
+        }
     #endif
 
     return IndirectLight + TorchLight * TorchBrightness_autoAdjust;
