@@ -68,7 +68,9 @@ void main() {
 
 	for (int i = 0; i < 3; i++) {
 		gl_Position = gl_in[i].gl_Position;
-		gl_Position.xy = gl_Position.xy * 0.8 - 0.2 * gl_Position.w;
+		#if defined LPV_SHADOWS && defined LPV_ENABLED
+			gl_Position.xy = gl_Position.xy * 0.8 - 0.2 * gl_Position.w;
+		#endif
 		Ftexcoord = texcoord[i].xy;
 		#ifdef TRANSLUCENT_COLORED_SHADOWS
 			Fcolor = color[i].rgb;

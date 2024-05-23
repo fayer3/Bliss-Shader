@@ -969,8 +969,10 @@ void main() {
 			float distortFactor = 1.0;
 		#endif
 
-		projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5) ;
-projectedShadowPosition.xy *= 0.8;
+		projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
+		#if defined LPV_SHADOWS && defined LPV_ENABLED
+			projectedShadowPosition.xy *= 0.8;
+		#endif
 		float ShadowAlpha = 0.0; // this is for subsurface scattering later.
 		Shadows = ComputeShadowMap(projectedShadowPosition, distortFactor, noise_2, filteredShadow.x, flatNormNdotL, shadowMapFalloff, DirectLightColor, ShadowAlpha, LabSSS > 0.0);
 

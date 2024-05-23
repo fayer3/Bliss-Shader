@@ -152,7 +152,9 @@ float ComputeShadowMap(inout vec3 directLightColor, vec3 playerPos, float maxDis
 
 	// hamburger
 	projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5);
-	projectedShadowPosition.xy *= 0.8;
+	#if defined LPV_SHADOWS && defined LPV_ENABLED
+		projectedShadowPosition.xy *= 0.8;
+	#endif
 	float shadowmap = 0.0;
 	vec3 translucentTint = vec3(0.0);
 
