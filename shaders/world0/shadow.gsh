@@ -15,6 +15,7 @@ layout (triangle_strip) out;
 	#endif
 #else
 	layout (max_vertices = 3) out;
+	out vec3 Fcolor;
 #endif
 
 in vec4 color[3];

@@ -57,8 +57,15 @@
             return relativeCoord*cubeTileRelativeResolution + cubeFaceOffsets[faceIndex] + renderOffsets[cube];
         }
 
-        float getCubeShadow(vec3 cubeShadowPos, int faceIndex, int cube) {
-            return texture(shadowtex0, vec3(cubeOffset(cubeShadowPos.xy, faceIndex, cube), cubeShadowPos.z));
+        vec3 getCubeShadow(vec3 cubeShadowPos, int faceIndex, int cube) {
+            vec3 pos = vec3(cubeOffset(cubeShadowPos.xy, faceIndex, cube), cubeShadowPos.z);
+            float solid = texture(shadowtex0, pos);
+            #ifdef LPV_COLOR_SHADOWS
+                float noTrans = texture(shadowtex1, pos);
+                return noTrans > solid ? texture(shadowcolor0, pos.xy).rgb : vec3(solid);
+            #else
+                return vec3(solid);
+            #endif
         }
     #endif
 #endif
