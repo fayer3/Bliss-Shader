@@ -125,15 +125,16 @@ vec3 DoAmbientLightColor(
                     vec3 lightPos = -fract(previousCameraPosition) - cameraPosition+previousCameraPosition + vec3(pos) - 14.5;
                     int face = 0;
                     vec3 dir = playerPos - lightPos;
-                    float d = dot(-normalWorld, dir-0.1);
+                    float d = dot(-normalWorld, normalize(dir-0.1));
                     if (d > 0) {
                         uint blockData = texelFetch(texBlockData, int(blockId), 0).r;
                         vec4 lightColorRange = unpackUnorm4x8(blockData);
                         lightColorRange.a *= 255.0;
                         float dist = length(dir);
                         if (dist < lightColorRange.a) {
-                            vec3 pos = worldToCube(dir + normalWorld * 0.05, face);
-                            float blend = (1.0 - dist / lightColorRange.a) / (1.0 + dist * -0.3 + dist * dist);
+                            const float bias = (3072.0 / shadowMapResolution) * 0.05;
+                            vec3 pos = worldToCube(dir + normalWorld * (0.05 + bias - bias * d), face);
+                            float blend = (1.0 - dist / lightColorRange.a) / (1.0 + dist * -0.3 + dist * dist * 0.4);
                             TorchLight += d * lightColorRange.rgb * getCubeShadow(pos, face, i) * blend;
                         }
                     }
