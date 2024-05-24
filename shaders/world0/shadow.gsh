@@ -57,6 +57,9 @@ void main() {
 						emitCubemap(directionMatices[f], cubeFaceOffsets[f]*2+renderOffsets[i]*2, lightPos);
 					}
 				}
+			} else {
+				// since lights are sorted, if one light is invalid all followings are aswell
+				break;
 			}
 		}
 		
