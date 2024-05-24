@@ -60,7 +60,7 @@ const mat4 cubeDown = mat4(-1.0, 0.0, 0.0, 0.0,
 	0.0, 1.0, 0.0, 0.0,
 	0.0, 0.0, 0.0, 1.0);
 
-mat4 directionMatices[6] = mat4[](
+const mat4 directionMatices[6] = mat4[](
 	cubeBack,
 	cubeTop,
 	cubeDown,
@@ -68,7 +68,7 @@ mat4 directionMatices[6] = mat4[](
 	cubeForward,
 	cubeRight);
 
-mat4 directionMaticesInverse[6] = mat4[](
+const mat4 directionMaticesInverse[6] = mat4[](
 	transpose(cubeBack),
 	transpose(cubeTop),
 	transpose(cubeDown),
@@ -85,11 +85,11 @@ const vec2 faceOffsets[6] = vec2[](
 	vec2(0.0, 1.0)
 	);
 	
-vec2 screenRes = vec2(shadowMapResolution);
-vec2 cubeTileResolution = floor(screenRes/(vec2(3.0,2.0)*5.0));
-vec2 cubeTileRelativeResolution = cubeTileResolution/screenRes;
+const vec2 screenRes = vec2(shadowMapResolution);
+const vec2 cubeTileResolution = floor(screenRes/(vec2(3.0,2.0)*5.0));
+const vec2 cubeTileRelativeResolution = cubeTileResolution/screenRes;
 
-ivec2 minBounds[6] = ivec2[](
+const ivec2 minBounds[6] = ivec2[](
 	ivec2(0, cubeTileResolution.y),
 	ivec2(cubeTileResolution.xy),
 	ivec2(cubeTileResolution.x*2,cubeTileResolution.y),
@@ -97,7 +97,7 @@ ivec2 minBounds[6] = ivec2[](
 	ivec2(cubeTileResolution.x, 0),
 	ivec2(cubeTileResolution.x*2, 0));
 
-ivec2 maxBounds[6] = ivec2[](
+const ivec2 maxBounds[6] = ivec2[](
 	ivec2(cubeTileResolution.x, cubeTileResolution.y*2),
 	ivec2(cubeTileResolution.x*2, cubeTileResolution.y*2),
 	ivec2(cubeTileResolution.x*3, cubeTileResolution.y*2),
@@ -105,7 +105,7 @@ ivec2 maxBounds[6] = ivec2[](
 	ivec2(cubeTileResolution.x*2, cubeTileResolution.y),
 	ivec2(cubeTileResolution.x*3, cubeTileResolution.y));
 
-vec2 cubeFaceOffsets[6] = vec2[](
+const vec2 cubeFaceOffsets[6] = vec2[](
 	vec2(0.0, cubeTileRelativeResolution.y),
 	vec2(cubeTileRelativeResolution.xy),
 	vec2(cubeTileRelativeResolution.x*2.0, cubeTileRelativeResolution.y),
@@ -113,7 +113,7 @@ vec2 cubeFaceOffsets[6] = vec2[](
 	vec2(cubeTileRelativeResolution.x, 0.0),
 	vec2(cubeTileRelativeResolution.x*2.0, 0.0));
 
-vec2 renderOffsets[9] = vec2[](
+const vec2 renderOffsets[9] = vec2[](
 	vec2(0.0, cubeTileRelativeResolution.y*8.0),
 	vec2(cubeTileRelativeResolution.x*3.0, cubeTileRelativeResolution.y*8.0),
 	vec2(cubeTileRelativeResolution.x*6.0, cubeTileRelativeResolution.y*8.0),
@@ -123,7 +123,7 @@ vec2 renderOffsets[9] = vec2[](
 	vec2(cubeTileRelativeResolution.x*12.0, cubeTileRelativeResolution.y*4.0),
 	vec2(cubeTileRelativeResolution.x*12.0, cubeTileRelativeResolution.y*2.0),
 	vec2(cubeTileRelativeResolution.x*12.0, 0.0));
-vec2 renderBounds[9] = vec2[](
+const vec2 renderBounds[9] = vec2[](
 	vec2(0.0, cubeTileResolution.y*8.0),
 	vec2(cubeTileResolution.x*3.0, cubeTileResolution.y*8.0),
 	vec2(cubeTileResolution.x*6.0, cubeTileResolution.y*8.0),
@@ -134,4 +134,4 @@ vec2 renderBounds[9] = vec2[](
 	vec2(cubeTileResolution.x*12.0, cubeTileResolution.y*2.0),
 	vec2(cubeTileResolution.x*12.0, 0.0));
 
-vec2 cornerOffset = vec2(-1.0 + cubeTileRelativeResolution);
+const vec2 cornerOffset = vec2(-1.0 + cubeTileRelativeResolution);

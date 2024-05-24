@@ -30,7 +30,7 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 	#include "/lib/voxel_common.glsl"
 	
 	#ifdef LPV_SHADOWS
-		#include "/lib/cube/LightData.glsl"
+		#include "/lib/cube/lightData.glsl"
 		shared bool lightSharedData[10*10*10];
 		uniform usampler1D texCloseLights;
 	#endif
