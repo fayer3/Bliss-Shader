@@ -36,9 +36,6 @@ out vec2 Ftexcoord;
 	uniform vec3 previousCameraPosition;
 #endif
 
-
-
-
 void main() {
 	#if defined LPV_SHADOWS && defined IS_LPV_ENABLED && defined LPV_ENABLED
 		for (int i = 0; i < 9; i++) {
