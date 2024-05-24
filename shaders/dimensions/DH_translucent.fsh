@@ -340,7 +340,7 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
     	    if(ShadowBounds){
     	    	Shadows = 0.0;
     	    	projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5);
-				#if defined LPV_SHADOWS && defined LPV_ENABLED
+				#ifdef LPV_SHADOWS
 					projectedShadowPosition.xy *= 0.8;
 				#endif
     	    	Shadows = shadow2D(shadow, projectedShadowPosition + vec3(0.0,0.0, smallbias)).x;

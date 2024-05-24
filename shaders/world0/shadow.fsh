@@ -1,7 +1,6 @@
 #version 330 compatibility
 
 #include "/lib/settings.glsl"
-#include "/lib/cube/cubeData.glsl"
 
 #ifdef TRANSLUCENT_COLORED_SHADOWS
 varying vec3 Fcolor;
@@ -13,7 +12,10 @@ varying vec2 Ftexcoord;
 uniform sampler2D tex;
 uniform sampler2D noisetex;
 
-flat in int render;
+#ifdef LPV_SHADOWS
+	#include "/lib/cube/cubeData.glsl"
+	flat in int render;
+#endif
 
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -27,7 +29,7 @@ float blueNoise(){
 
 
 void main() {
-	#if defined LPV_SHADOWS && defined IS_LPV_ENABLED && defined LPV_ENABLED
+	#ifdef LPV_SHADOWS
 		if (render >= 0 && (
 			any(lessThan(gl_FragCoord.xy, minBounds[render >> 4] + renderBounds[render  & 15])) ||
 			any(greaterThan(gl_FragCoord.xy, maxBounds[render >> 4] + renderBounds[render & 15]))))

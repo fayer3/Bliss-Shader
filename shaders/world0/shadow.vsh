@@ -43,7 +43,7 @@ uniform vec3 shadowLightVec;
 uniform float shadowMaxProj;
 attribute vec4 mc_midTexCoord;
 varying vec4 color;
-#if defined LPV_SHADOWS && defined IS_LPV_ENABLED && defined LPV_ENABLED
+#ifdef LPV_SHADOWS
 	varying vec3 worldPos;
 	flat varying vec3 worldNormal;
 #endif
@@ -196,7 +196,7 @@ void main() {
 		vec3 playerpos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
 	#else
 	#endif
-	#if defined LPV_SHADOWS && defined IS_LPV_ENABLED && defined LPV_ENABLED
+	#ifdef LPV_SHADOWS
 		#ifdef WAVY_PLANTS
 			worldPos = playerpos;
 		#else

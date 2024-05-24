@@ -5,13 +5,13 @@ layout (triangle_strip) out;
 
 #include "/lib/settings.glsl"
 
-#if defined LPV_SHADOWS && defined IS_LPV_ENABLED && defined LPV_ENABLED
+#ifdef LPV_SHADOWS
 	#ifdef TRANSLUCENT_COLORED_SHADOWS
-	// colored shadows need more vertex data, so can only push fewer vertices
-	layout (max_vertices = 102) out;
-	out vec3 Fcolor;
+		// colored shadows need more vertex data, so can only push fewer vertices
+		layout (max_vertices = 102) out;
+		out vec3 Fcolor;
 	#else
-	layout (max_vertices = 144) out;
+		layout (max_vertices = 144) out;
 	#endif
 #else
 	layout (max_vertices = 3) out;
@@ -23,7 +23,7 @@ in vec2 texcoord[3];
 
 out vec2 Ftexcoord;
 
-#if defined LPV_SHADOWS && defined IS_LPV_ENABLED && defined LPV_ENABLED
+#ifdef LPV_SHADOWS
 	in vec3 worldPos[3];
 	flat in vec3 worldNormal[3];
 	flat out int render;
@@ -37,7 +37,7 @@ out vec2 Ftexcoord;
 #endif
 
 void main() {
-	#if defined LPV_SHADOWS && defined IS_LPV_ENABLED && defined LPV_ENABLED
+	#ifdef LPV_SHADOWS
 		for (int i = 0; i < 9; i++) {
 			uint data = texelFetch(texCloseLights, i, 0).r;
 			float dist;
@@ -65,7 +65,7 @@ void main() {
 
 	for (int i = 0; i < 3; i++) {
 		gl_Position = gl_in[i].gl_Position;
-		#if defined LPV_SHADOWS && defined LPV_ENABLED
+		#ifdef LPV_SHADOWS
 			gl_Position.xy = gl_Position.xy * 0.8 - 0.2 * gl_Position.w;
 		#endif
 		Ftexcoord = texcoord[i].xy;
