@@ -6,22 +6,47 @@ layout (triangle_strip) out;
 #include "/lib/settings.glsl"
 
 #ifdef LPV_SHADOWS
-	#ifdef TRANSLUCENT_COLORED_SHADOWS
-		// colored shadows need more vertex data, so can only push fewer vertices
-		layout (max_vertices = 102) out;
-		out vec3 Fcolor;
+	// limit vertex output to light count to reduce overhead
+	// can be slow when the shader wants to output too many vertices, even if they aren't outputted
+	// there are 3 vertices for the regular shadows, and up to 3x5 for each light
+	#if LPV_SHADOWS_LIGHT_COUNT == 1
+		layout (max_vertices = 18) out;
+	#elif LPV_SHADOWS_LIGHT_COUNT == 2
+		layout (max_vertices = 33) out;
+	#elif LPV_SHADOWS_LIGHT_COUNT == 3
+		layout (max_vertices = 48) out;
+	#elif LPV_SHADOWS_LIGHT_COUNT == 4
+		layout (max_vertices = 63) out;
+	#elif LPV_SHADOWS_LIGHT_COUNT == 5
+		layout (max_vertices = 78) out;
+	#elif LPV_SHADOWS_LIGHT_COUNT == 6
+		layout (max_vertices = 93) out;
 	#else
-		layout (max_vertices = 144) out;
+		#ifdef TRANSLUCENT_COLORED_SHADOWS
+			// colored shadows need more vertex data, so can only push fewer vertices
+			layout (max_vertices = 102) out;
+		#else
+			#if LPV_SHADOWS_LIGHT_COUNT == 7
+				layout (max_vertices = 108) out;
+			#elif LPV_SHADOWS_LIGHT_COUNT == 8
+				layout (max_vertices = 123) out;
+			#elif LPV_SHADOWS_LIGHT_COUNT == 9
+				layout (max_vertices = 138) out;
+			#endif
+		#endif
 	#endif
 #else
+	// only 3 shadow vertices
 	layout (max_vertices = 3) out;
-	out vec3 Fcolor;
 #endif
 
 in vec4 color[3];
 in vec2 texcoord[3];
 
 out vec2 Ftexcoord;
+#ifdef TRANSLUCENT_COLORED_SHADOWS
+	out vec3 Fcolor;
+#endif
 
 #ifdef LPV_SHADOWS
 	in vec3 worldPos[3];
