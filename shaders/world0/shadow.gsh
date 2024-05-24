@@ -38,7 +38,7 @@ out vec2 Ftexcoord;
 
 void main() {
 	#ifdef LPV_SHADOWS
-		for (int i = 0; i < 9; i++) {
+		for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 			uint data = texelFetch(texCloseLights, i, 0).r;
 			float dist;
 			ivec3 pos;

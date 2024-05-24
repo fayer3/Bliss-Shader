@@ -101,7 +101,7 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 	    voxelSharedData[i] = GetVoxelBlock(pos);
 		#ifdef LPV_SHADOWS
 			lightSharedData[i] = false;
-			for (int l = 0; l < 9; l++) {
+			for (int l = 0; l < LPV_SHADOWS_LIGHT_COUNT; l++) {
 				float dist; ivec3 lpos; uint id;
 				if (getLightData(texelFetch(texCloseLights, l, 0).r, dist, lpos, id)) {
 					if (length(vec3(pos) - vec3(lpos - 15 + int(LpvSize / 2))) < 1.5 && dist < 13) {

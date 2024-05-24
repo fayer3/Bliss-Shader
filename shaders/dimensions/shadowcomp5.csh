@@ -15,17 +15,17 @@ void main() {
 		#ifdef LPV_SHADOWS
 			// total coverage of 1
 			
-			uint[9] allData;
-			for(int i = 0; i < 9; i++) {
+			uint[LPV_SHADOWS_LIGHT_COUNT] allData;
+			for(int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 				allData[i] = 4294967295u;
 			}
 
 			for (int x = 0; x < 32; x++) {
-				for (int z = 0; z < 9; z++) {
+				for (int z = 0; z < LPV_SHADOWS_LIGHT_COUNT; z++) {
 					ivec3 pos = ivec3(x, 0, z);
 					uint data = imageLoad(imgSortLights, pos).r;
 					// insert
-					for (int i = 0; i < 9; i++) {
+					for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 						uint minData = min(allData[i], data);
 						if (minData == data) data = allData[i];
 						allData[i] = minData;
@@ -37,7 +37,7 @@ void main() {
 					if (minData == 4294967295u) break;*/
 				}
 			}
-			for (int i = 0; i < 9; i++) {
+			for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 				imageStore(imgSortLights, ivec3(0, 0, i), uvec4(allData[i]));
 			}
 		#endif

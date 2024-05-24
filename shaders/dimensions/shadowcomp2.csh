@@ -27,7 +27,7 @@ const ivec3 workGroups = ivec3(1, 1, 1);
 				uvec3 posU = uvec3(pos + 15);
 				uint data = uint(d*4) << 26 | posU.x << 21 | posU.y << 16 | posU.z << 11 | id;
 				uint prevData = data;
-				for (int i = 0; i < 9; i++) {
+				for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 					prevData = imageAtomicMin(imgCloseLights, i, data);
 					if (prevData > data) data = prevData;
 				}

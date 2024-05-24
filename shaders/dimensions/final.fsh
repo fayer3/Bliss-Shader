@@ -198,36 +198,9 @@ void main() {
   #endif
 
   #if DEBUG_VIEW == debug_LIGHTS || DEBUG_VIEW == debug_SHADOWMAP 
-    ivec2 coords = ivec2((texcoord-vec2(0.75, 0)) * vec2(4.0, 2.0) * textureSize(texSortLights, 0).xy);
-    if(texcoord.x > 0.75 && texcoord.y < 0.5) FINAL_COLOR.rgb = vec3(texelFetch(texSortLights, ivec3(coords, int(frameTimeCounter*2.0)%textureSize(texSortLights, 0).z), 0).rgb/4294967295.0);
-  
-    beginText(ivec2(gl_FragCoord.xy*0.25), ivec2(0, viewHeight*0.25));
-    for (int i = 0; i < 9; i++) {
+    beginText(ivec2(gl_FragCoord.xy * 0.25), ivec2(0, viewHeight*0.25));
+    for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
       uint data = texelFetch(texCloseLights, i, 0).r;
-      printString((_L, _i, _g, _h, _t, _space));
-      printInt(i);
-      float dist;
-      ivec3 pos;
-      uint id;
-      if (!getLightData(data, dist, pos, id)) {
-        printString((_colon, _space, _n, _u, _l, _l));
-      } else {
-        printString((_colon, _space, _d, _colon, _space));
-        printFloat(dist);
-        printString((_comma, _space, _x, _colon, _space));
-        printInt(pos.x - 15);
-        printString((_comma, _space, _y, _colon, _space));
-        printInt(pos.y - 15);
-        printString((_comma, _space, _z, _colon, _space));
-        printInt(pos.z - 15);
-        printString((_comma, _space, _i, _d, _colon, _space));
-        printInt(int(id));
-      }
-      printLine();
-    }
-    printLine();
-    for (int i = 0; i < 9; i++) {
-      uint data = texelFetch(texSortLights, ivec3(0,0,i), 0).r;
       printString((_L, _i, _g, _h, _t, _space));
       printInt(i);
       float dist;
@@ -251,9 +224,15 @@ void main() {
     }
     endText(FINAL_COLOR);
     
-    beginText(ivec2(gl_FragCoord.xy*0.25), ivec2(viewWidth*0.19, viewHeight*0.135));
+    int curLight = int(frameTimeCounter * 2.0) % LPV_SHADOWS_LIGHT_COUNT;
+    ivec3 coords = ivec3((texcoord - vec2(0.75, 0)) * vec2(4.0, 2.0) * textureSize(texSortLights, 0).xy, curLight);
+    if(texcoord.x > 0.75 && texcoord.y < 0.5) {
+      FINAL_COLOR.rgb = vec3(texelFetch(texSortLights, coords, 0).rgb / 4294967295.0);
+    }
+    
+    beginText(ivec2(gl_FragCoord.xy * 0.25), ivec2(viewWidth *  0.19, viewHeight * 0.135));
     printString((_L, _i, _g, _h, _t, _colon, _space));
-    printInt(int(frameTimeCounter*2.0)%textureSize(texSortLights, 0).z);
+    printInt(curLight);
     endText(FINAL_COLOR);
   #endif
   

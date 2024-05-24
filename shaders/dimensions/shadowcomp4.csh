@@ -15,29 +15,25 @@ void main() {
 		#ifdef LPV_SHADOWS
 			// total coverage of 32x1
 			
-			uint[9] allData;
-			for(int i = 0; i < 9; i++) {
+			uint[LPV_SHADOWS_LIGHT_COUNT] allData;
+			for(int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 				allData[i] = 4294967295u;
 			}
 
 			for (int y = 0; y < 32; y++) {
-				for (int z = 0; z < 9; z++) {
+				for (int z = 0; z < LPV_SHADOWS_LIGHT_COUNT; z++) {
 					ivec3 pos = ivec3(gl_LocalInvocationIndex, y, z);
 					uint data = imageLoad(imgSortLights, pos).r;
 					// insert
-					for (int i = 0; i < 9; i++) {
+					for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 						uint minData = min(allData[i], data);
 						if (minData == data) data = allData[i];
 						allData[i] = minData;
 						if (minData == 4294967295u) break;
 					}
-					/*uint minData = min(allData[z], data);
-					if (minData == data) data = allData[z];
-					allData[z] = minData;
-					if (minData == 4294967295u) break;*/
 				}
 			}
-			for (int i = 0; i < 9; i++) {
+			for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 				imageStore(imgSortLights, ivec3(gl_LocalInvocationIndex, 0, i), uvec4(allData[i]));
 			}
 		#endif

@@ -30,8 +30,8 @@ void main() {
 			uvec3 chunkPos = gl_WorkGroupID * gl_WorkGroupSize * uvec3(2,1,1);
 			uvec2 xyPos = chunkPos.xy + uvec2(8) * uvec2(gl_LocalInvocationID.z / 4, gl_LocalInvocationID.z % 4) + gl_LocalInvocationID.xy;
 			
-			uint[9] allData;
-			for(int i = 0; i < 9; i++) {
+			uint[LPV_SHADOWS_LIGHT_COUNT] allData;
+			for(int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 				allData[i] = 4294967295u;
 			}
 
@@ -46,7 +46,7 @@ void main() {
 						float dist = min(length(vec3(pos) - fract(cameraPosition)), 15.9);
 						if (clamp(posU, uvec3(0), uvec3(31)) == posU) {
 							uint data = uint(dist*4) << 26 | posU.x << 21 | posU.y << 16 | posU.z << 11 | blockId;
-							for (int i = 0; i < 9; i++) {
+							for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 								uint minData = min(allData[i], data);
 								if (minData == data) data = allData[i];
 								allData[i] = minData;
@@ -55,7 +55,7 @@ void main() {
 					}
 				}
 			}
-			for (int i = 0; i < 9; i++) {
+			for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 				imageStore(imgSortLights, ivec3(xyPos.xy, i), uvec4(allData[i]));
 			}
 		#endif
