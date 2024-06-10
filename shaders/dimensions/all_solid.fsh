@@ -75,6 +75,7 @@ uniform vec3 cameraPosition;
 uniform float rainStrength;
 uniform sampler2D noisetex;//depth
 uniform sampler2D depthtex0;
+uniform float alphaTestRef;
 
 
 uniform vec4 entityColor;
@@ -495,9 +496,9 @@ void main() {
 		SpecularTex.r = max(SpecularTex.r, Puddle_shape);
 		SpecularTex.g = max(SpecularTex.g, Puddle_shape*0.02);
 		
-		if (blockID == 250 ||
+		if ((blockID == 250 ||
 		 blockID == BLOCK_REDSTONE_ORE_LIT ||
-		  blockID == BLOCK_DEEPSLATE_REDSTONE_ORE_LIT) {
+		  blockID == BLOCK_DEEPSLATE_REDSTONE_ORE_LIT) && alphaTestRef < 0.05) {
 			float smax = max(max(Albedo.r,Albedo.g),Albedo.b);
 			float smin = min(min(Albedo.r,Albedo.g),Albedo.b);
 			float s = (smax - smin) / smax;
