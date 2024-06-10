@@ -1059,6 +1059,11 @@ void main() {
             mixWeight = 1.0;
         }
 
+        if (blockId == 250) {
+            lightColor = vec3(1.0);
+            lightRange = 3.0;
+        }
+
 
         // hack to increase light (if set)
         if (lightRange > 0.0) lightRange += 1.0;

@@ -1,6 +1,7 @@
 #extension GL_ARB_shader_texture_lod : enable
 
 #include "/lib/settings.glsl"
+#include "/lib/blocks.glsl"
 
 flat varying int NameTags;
 
@@ -493,6 +494,15 @@ void main() {
 
 		SpecularTex.r = max(SpecularTex.r, Puddle_shape);
 		SpecularTex.g = max(SpecularTex.g, Puddle_shape*0.02);
+		
+		if (blockID == 250 ||
+		 blockID == BLOCK_REDSTONE_ORE_LIT ||
+		  blockID == BLOCK_DEEPSLATE_REDSTONE_ORE_LIT) {
+			float smax = max(max(Albedo.r,Albedo.g),Albedo.b);
+			float smin = min(min(Albedo.r,Albedo.g),Albedo.b);
+			float s = (smax - smin) / smax;
+			SpecularTex.a = s > 0.1 ? pow(s, 1.5) * 0.9999 : 1.0;
+		}
 
 		gl_FragData[1].rg = SpecularTex.rg;
 
@@ -501,12 +511,18 @@ void main() {
 		#endif
 
 		#if EMISSIVE_TYPE == 1
-			gl_FragData[1].a = EMISSIVE;
+			if (blockID == 250 ||
+				blockID == BLOCK_REDSTONE_ORE_LIT ||
+				blockID == BLOCK_DEEPSLATE_REDSTONE_ORE_LIT) {
+				gl_FragData[1].a = SpecularTex.a;
+			} else {
+				gl_FragData[1].a = EMISSIVE;
+			}
 		#endif
 
 		#if EMISSIVE_TYPE == 2
 			gl_FragData[1].a = SpecularTex.a;
-			if(SpecularTex.a <= 0.0) gl_FragData[2].a = EMISSIVE;
+			if(SpecularTex.a <= 0.0) gl_FragData[1].a = EMISSIVE;
 		#endif
 
 		#if EMISSIVE_TYPE == 3		
