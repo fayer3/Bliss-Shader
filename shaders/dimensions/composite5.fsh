@@ -399,10 +399,6 @@ vec4 TAA_hq(bool hand){
 		float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev) * 0.5;
 		float movementRejection = (0.12+isclamped)*clamp(length(velocity/texelSize),0.0,1.0);
 
-		
-		// float depthDiff = texture2D(colortex14, previousPosition.xy).a;
-		// movementRejection = mix( 0.0, 1.0, depthDiff);
-
 		if(hand) movementRejection *= 5.0;
 		
 		//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering
@@ -438,13 +434,16 @@ void main() {
 	gl_FragData[0].a = 1.0;
 
 	#ifdef TAA
-		float dataUnpacked = decodeVec2(texture2D(colortex1,texcoord).w).y; 
-		bool hand = abs(dataUnpacked-0.75) < 0.01 && texture2D(depthtex1,texcoord).x < 1.0;
+
+		vec2 taauTC = clamp(texcoord*RENDER_SCALE, vec2(0.0), RENDER_SCALE - texelSize*2.0);
+		
+		float dataUnpacked = decodeVec2(texture2D(colortex1,taauTC).w).y; 
+		bool hand = abs(dataUnpacked-0.75) < 0.01 && texture2D(depthtex1,taauTC).x < 1.0;
 		
 		vec4 color = TAA_hq(hand);
 
 		#if DEBUG_VIEW == debug_TEMPORAL_REPROJECTION
-			color.rgb = texture2D(colortex3, texcoord).rgb;
+			color.rgb = texture2D(colortex3, taauTC).rgb;
 		#endif
 
 		#ifdef SCREENSHOT_MODE

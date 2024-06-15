@@ -14,7 +14,7 @@ option.sun_illuminance = Sun Illuminance
 option.moon_illuminance = Moon Illuminance
 option.MOONPHASE_BASED_MOONLIGHT = Moonphase brightness levels
 
-option.RESOURCEPACK_SKY = RP Sky
+option.RESOURCEPACK_SKY = ResourcePack Sky
     value.RESOURCEPACK_SKY.0 = Do not use
     value.RESOURCEPACK_SKY.1 = Sky + Shader sun/moon
     value.RESOURCEPACK_SKY.2 = Full sky
@@ -92,18 +92,23 @@ screen.Direct_Light = Direct Light
         option.Max_Shadow_Filter_Radius = Maximum Shadow Filter Radius
         option.Max_Filter_Depth = Sun Size Factor
         
-    screen.LPV = FloodFill
+    screen.LPV = FloodFill - §cIRIS REQUIRED§r
         option.LPV_ENABLED = Enabled
         option.LPV_SIZE = Size
             value.LPV_SIZE.6 = Small [64]
             value.LPV_SIZE.7 = Medium [128]
             value.LPV_SIZE.8 = Large [256]
+        option.LPV_SATURATION = Light Saturation
+            suffix.LPV_SATURATION=%
+        option.LPV_TINT_SATURATION = Tint Saturation
+            suffix.LPV_TINT_SATURATION=%
         option.LPV_NORMAL_STRENGTH = Normal Strength
             suffix.LPV_NORMAL_STRENGTH = %
             value.LPV_NORMAL_STRENGTH.0 = OFF
         option.LPV_ENTITY_LIGHTS = Entity Lights
         option.LPV_REDSTONE_LIGHTS = Redstone Lights
         option.LPV_COLORED_CANDLES = Colored Candles
+        option.LPV_NOSHADOW_HACK = Iris <= 1.7.0 Fix
 
 screen.Subsurface_Scattering = Sub-Surface Scattering
     option.LabSSS_Curve = LabSSS Curve
@@ -155,7 +160,7 @@ screen.Fog = Fog Settings
     option.BLOOMY_FOG = Bloomy Fog Multiplier
     option.Haze_amount = Atmospheric Haze Density
     option.RainFog_amount = Rain Fog Multiplier
-    option.RAYMARCH_CLOUDS_WITH_FOG = Render Clouds As Fog
+    option.RAYMARCH_CLOUDS_WITH_FOG = Render Clouds As Fog §c(READ DESCRIPTION)§r
     option.BorderFog = Chunk Border Fog
 
     screen.TOD_fog = Time Of Day Fog
@@ -430,7 +435,7 @@ screen.Post_Processing = Post Processing
 		option.HIGHLIGHTS_GRADE_MUL = Highlights Brightness
 
 
-screen.LabPBR = Lab PBR
+screen.Resource_Pack_Support = Resource Pack Support
     screen.Reflections = Specular Reflections
         option.Specular_Reflections = Specular Reflections
         option.Screen_Space_Reflections = Screen-Space Reflections
@@ -452,7 +457,6 @@ screen.LabPBR = Lab PBR
 
 
 screen.POM = Parallax Occlusion Mapping / POM
-    option.HEIGTHMAP_DEPTH_OFFSET = Heightmap in Depth
     option.POM = Parallax Occlusion Mapping
     option.MAX_ITERATIONS = Quality
     option.POM_DEPTH = Depth
@@ -540,7 +544,16 @@ screen.Ambient_light.comment = Configure settings related to the lighting in sha
     screen.Ambient_Colors.comment = Configure the color of light in shaded areas.
     screen.Torch_Colors.comment = Configure the color of light from torches or other placed lightsources.
 
-screen.LabPBR.comment = A handfull of effects that use information provided by any resourcepack that follows the LabPBR format.
+    option.LPV_SIZE.comment = Configures the size (in blocks) of the volume for colored lighting.
+    option.LPV_SATURATION.comment = Configures the intensity of colored lighting.
+    option.LPV_TINT_SATURATION.comment = Configures the intensity of tinting by translucent blocks on colored lighting.
+    option.LPV_NORMAL_STRENGTH.comment = Configure the amount surface normals will affect lighting direction.
+    option.LPV_ENTITY_LIGHTS.comment = Allows entities to contribute to colored lighting.
+    option.LPV_REDSTONE_LIGHTS.comment = Allows redstone blocks to contribute to colored lighting.
+    option.LPV_COLORED_CANDLES.comment = Allows colored candles to emit matching colored lighting.
+    option.LPV_NOSHADOW_HACK.comment = Fix for Iris 1.7.0 and lower! Allows floodfill to work in Nether & End, but disables entity & dropped item lights.
+
+screen.Resource_Pack_Support.comment = A handfull of effects that use information provided by a resourcepack.
     screen.Reflections.comment = Configure the reflections that use information provided by a LabPBR resourcepack.
         option.Specular_Reflections.comment = Toggle all reflections for Labpbr packs. This enables the sun reflection, and allows other settings to be enabled below. §aPERFORMANCE COST:§r low
         option.Screen_Space_Reflections.comment = Toggle screen-space reflections. §aPERFORMANCE COST:§r medium
@@ -564,7 +577,6 @@ screen.Emissives.comment = §bWhat is this?§r Emissiveness is just how much lig
     option.Emissive_Curve.comment = This determines how quickly the emissive texture reaches its brightest point. 1.0 is linear.
 
 screen.POM.comment = Configure settings related to parallax occlusion mapping that uses information provided by a resourcepack.
-    option.HEIGTHMAP_DEPTH_OFFSET.comment = §bWhat is this?§r This makes the resourcepack provided "heightmap" offset the depth that a lot of effects use. This allows for finer details nearby, and can work as a "budget POM". §aPERFORMANCE COST:§r low to medium - use this if POM is too hard to run.
     option.POM.comment = §bWhat is this?§r This effect attempts to create 3D geometry where there previously was none, by using a special image from a resourcepack. This effect basically only pushes inwards, so some artifacts can exist when looking at steep angles. §aPERFORMANCE COST:§r medium to high
     option.MAX_ITERATIONS.comment = Configure the quality of the parallax occlusion mapping effect. if you see individual layers when looking up close, inscreasing this makes more layers, so they will become harder to see. §aPERFORMANCE COST:§r high
     option.POM_DEPTH.comment = How deep the parallax occlusion mapping effect can go into a surface. §aPERFORMANCE COST:§r very low
@@ -583,7 +595,7 @@ screen.Fog.comment = Configure settings related to the raymarched volumetric fog
     option.BLOOMY_FOG.comment = Configure the strength of bloom that is applied to fog. §bWhat is this?§r This effect makes the fog look soft, it helps hide a little noise too. can cause some visible flickering on detailed edges. §aPERFORMANCE COST:§r very low
     option.Haze_amount.comment = Configure how dense the atmosphere around you is. §bWhat is this?§r This is the blue haze you see in the distance.
     option.RainFog_amount.comment = Configure how dense the fog gets when it rains.
-    option.RAYMARCH_CLOUDS_WITH_FOG.comment = Toggle detailed fog when you go within or around a cloud. §aPERFORMANCE COST:§r medium to high
+    option.RAYMARCH_CLOUDS_WITH_FOG.comment = §cWARNING§r: This setting is experimental and not very well made! you will need to increase fog samples to make it match the normal clouds. Toggle detailed fog when you go within or around a cloud. §aPERFORMANCE COST:§r high. 
     option.BorderFog.comment = §bWhat is this?§r Toggle a fog that attempts to hide the chunks loading in. But because the sky is all over the place, it is difficult to do well. §aPERFORMANCE COST:§r very very low
 
     screen.TOD_fog.comment = Configure the density of fog that appears at specific times of the day.
@@ -688,11 +700,29 @@ option.SKY_GROUND.comment = §bWhat is this?§r This is the dark bottom half of 
 option.SNELLS_WINDOW.comment = §bWhat is this?§r this is the dark reflective circle you see when under-water. This is an approximation of a thing that happens in reality known as "total internal reflection". §aPERFORMANCE COST:§r very very very small.
 option.entityShadowDistanceMul.comment = §bWhat is this?§r Configure how far shadows should work for entities. This is good if you want to keep entity shadows and improved performance in high entity areas.
 
-screen.DISTANT_HORIZONS_SETTINGS = §2Distant Horizons §fsettings
+screen.DISTANT_HORIZONS_SETTINGS = Distant Horizons - §cIRIS REQUIRED§r
+option.DH_OVERDRAW_PREVENTION = Overdraw prevention
+option.OVERDRAW_MAX_DISTANCE = Max distance for overdraw prevention 
+    value.OVERDRAW_MAX_DISTANCE.0 = Unlimited
+    value.OVERDRAW_MAX_DISTANCE.32 = 2 Chunks
+    value.OVERDRAW_MAX_DISTANCE.48 = 3 Chunks
+    value.OVERDRAW_MAX_DISTANCE.64 = 4 Chunks
+    value.OVERDRAW_MAX_DISTANCE.80 = 5 Chunks
+    value.OVERDRAW_MAX_DISTANCE.96 = 6 Chunks
+    value.OVERDRAW_MAX_DISTANCE.112 = 7 Chunks
+    value.OVERDRAW_MAX_DISTANCE.128 = 8 Chunks
+    value.OVERDRAW_MAX_DISTANCE.144 = 9 Chunks
+    value.OVERDRAW_MAX_DISTANCE.160 = 10 Chunks
+    value.OVERDRAW_MAX_DISTANCE.176 = 11 Chunks
+    value.OVERDRAW_MAX_DISTANCE.192 = 12 Chunks
+    value.OVERDRAW_MAX_DISTANCE.208 = 13 Chunks
+    value.OVERDRAW_MAX_DISTANCE.224 = 14 Chunks
+    value.OVERDRAW_MAX_DISTANCE.240 = 15 Chunks
+    value.OVERDRAW_MAX_DISTANCE.256 = 16 Chunks
 
-option.DH_KNOWN_ISSUES =
-value.DH_KNOWN_ISSUES.0 = §c CLICK THIS TEXT TO LOOP THROUGH A LIST OF KNOWN ISSUES
-value.DH_KNOWN_ISSUES.1 = §a GTAO, RTAO, and SSGI break on LODs - DH support unimplemented
+option.DH_AMBIENT_OCCLUSION = ambient occlusion on LOD chunks
+option.DH_SUBSURFACE_SCATTERING = sub-surface scattering on LOD chunks
+option.DH_SCREENSPACE_REFLECTIONS = screen-space reflections on LOD chunks
 
 option.DISTANT_HORIZONS_SHADOWMAP = §c(DO NOT USE IF YOU DO NOT KNOW WHAT THIS IS)§r DH shadowmap support
 option.DISTANT_HORIZONS_SHADOWMAP.comment =  §cTHIS SETTING WILL DESTROY PERFORMANCE THIS WILL MAKE SHADOWS LOOK BLOCKY, FLICKERY, AND LOW DETAIL§r. set shadow distance to 32 chunks (or more). set shadow resolution to 4096 (or more)

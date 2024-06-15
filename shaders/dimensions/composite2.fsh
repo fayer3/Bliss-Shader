@@ -13,6 +13,7 @@ uniform sampler2D dhDepthTex;
 uniform sampler2D dhDepthTex1;
 #endif
 
+uniform sampler2D colortex0;
 uniform sampler2D colortex2;
 uniform sampler2D colortex3;
 // uniform sampler2D colortex4;
@@ -38,6 +39,7 @@ uniform int isEyeInWater;
 uniform float rainStrength;
 uniform ivec2 eyeBrightnessSmooth;
 uniform float eyeAltitude;
+uniform float caveDetection;
 
 #define DHVLFOG
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
@@ -80,6 +82,7 @@ float linearizeDepthFast(const in float depth, const in float near, const in flo
 
 	
 	#include "/lib/volumetricClouds.glsl"
+	// #define CLOUDS_INTERSECT_TERRAIN
 	#include "/lib/overworld_fog.glsl"
 #endif
 #ifdef NETHER_SHADER
@@ -397,11 +400,19 @@ void main() {
 	vec3 indirectLightColor_dynamic = averageSkyCol_Clouds/30.0;
 
 	#ifdef OVERWORLD_SHADER
-		vec4 VolumetricFog = GetVolumetricFog(viewPos0, vec2(noise_1,noise_2), directLightColor, indirectLightColor);
+		vec4 VolumetricFog = GetVolumetricFog(viewPos0, vec2(noise_1,noise_2), directLightColor, indirectLightColor, averageSkyCol_Clouds/30.0);
 	#endif
 	
 	#if defined NETHER_SHADER || defined END_SHADER
 		vec4 VolumetricFog = GetVolumetricFog(viewPos0, noise_1, noise_2);
+	#endif
+	
+	#if defined VOLUMETRIC_CLOUDS && defined CLOUDS_INTERSECT_TERRAIN
+		vec4 Clouds = texture2D(colortex0, (gl_FragCoord.xy*texelSize) / (VL_RENDER_RESOLUTION/CLOUDS_QUALITY));
+
+		VolumetricFog.rgb = Clouds.rgb * VolumetricFog.a + VolumetricFog.rgb;
+
+		VolumetricFog.a = VolumetricFog.a*Clouds.a;
 	#endif
 
 	gl_FragData[0] = clamp(VolumetricFog, 0.0, 65000.0);

@@ -1,6 +1,9 @@
 #extension GL_ARB_shader_texture_lod : enable
 
 #include "/lib/settings.glsl"
+#include "/lib/blocks.glsl"
+#include "/lib/entities.glsl"
+#include "/lib/items.glsl"
 
 flat varying int NameTags;
 
@@ -312,23 +315,25 @@ void main() {
 	float torchlightmap = lmtexcoord.z;
 
 	#ifdef Hand_Held_lights
-		if(HELD_ITEM_BRIGHTNESS > 0.0) torchlightmap = max(torchlightmap, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(fragpos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
+		if(HELD_ITEM_BRIGHTNESS > 0.0) torchlightmap = max(torchlightmap, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(worldpos-cameraPosition)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
 
 		#ifdef HAND
 			torchlightmap *= 0.9;
 		#endif
-
 	#endif
 	
-	float lightmap = clamp( (lmtexcoord.w-0.8) * 10.0,0.,1.);
+	float lightmap = clamp( (lmtexcoord.w-0.9) * 10.0,0.,1.);
 
-	float rainfall = rainStrength * noPuddleAreas;
-	float Puddle_shape = 0.;
+	float rainfall = 0.0;
+	float Puddle_shape = 0.0;
 	
 	#if defined Puddles && defined WORLD && !defined ENTITIES && !defined HAND
-		Puddle_shape = (1.0 - clamp(exp(-15 * pow(texture2D(noisetex, worldpos.xz * (0.020 * Puddle_Size)	).b  ,5)),0,1)) * lightmap		;
-		Puddle_shape *= clamp( viewToWorld(normal).y*0.5+0.5 ,0.0,1.0);
-		Puddle_shape *= rainfall;
+		rainfall = rainStrength * noPuddleAreas * lightmap;
+
+		Puddle_shape = clamp(lightmap - exp(-15.0 * pow(texture2D(noisetex, worldpos.xz * (0.020 * Puddle_Size)	).b,5.0)),0.0,1.0);
+		Puddle_shape *= clamp( viewToWorld(normal).y*0.5+0.5,0.0,1.0);
+		Puddle_shape *= rainStrength * noPuddleAreas ;
+
 	#endif
 
 	
@@ -412,9 +417,9 @@ void main() {
 	#ifdef AEROCHROME_MODE
 		float gray = dot(Albedo.rgb, vec3(0.2, 1.0, 0.07));
 		if (
-			blockID == BLOCK_AMETHYST_BUD_MEDIUM || blockID == BLOCK_AMETHYST_BUD_LARGE || blockID == BLOCK_AMETHYST_CLUSTER ||
-			blockID == BLOCK_SSS_STRONG || blockID == BLOCK_SSS_WEAK ||
-			blockID >= 10 && blockId < 80
+			blockID == BLOCK_AMETHYST_BUD_MEDIUM || blockID == BLOCK_AMETHYST_BUD_LARGE || blockID == BLOCK_AMETHYST_CLUSTER 
+			|| blockID == BLOCK_SSS_STRONG || blockID == BLOCK_SSS_WEAK
+			|| blockID >= 10 && blockID < 80
 		) {
 			// IR Reflective (Pink-red)
 			Albedo.rgb = mix(vec3(gray), aerochrome_color, 0.7);
@@ -445,12 +450,12 @@ void main() {
 	#ifdef HAND
 		if (Albedo.a > 0.1){
 			Albedo.a = 0.75;
+			gl_FragData[3] = vec4(0.0);
 		} else {
 			Albedo.a = 1.0;
 		}
 	#endif
-
-	#if defined HAND || defined ENTITIES || defined BLOCKENTITIES
+	#if defined PARTICLE_RENDERING_FIX && (defined ENTITIES || defined BLOCKENTITIES)
 		gl_FragData[3] = vec4(0.0);
 	#endif
 
@@ -471,16 +476,7 @@ void main() {
 		NormalTex.xy = NormalTex.xy * 2.0-1.0;
 		NormalTex.z = sqrt(max(1.0 - dot(NormalTex.xy, NormalTex.xy), 0.0));
 
-		// #if defined HEIGTHMAP_DEPTH_OFFSET && !defined HAND
-		// 	gl_FragDepth = gl_FragCoord.z;
-		// 	vec3 truePos = fragpos;
-		// 	truePos.z -= Heightmap * POM_DEPTH * (1.0 + ld(truePos.z));
-	
-		// 	gl_FragDepth = toClipSpace3(truePos).z;
-		// #endif
-		
-		normal = applyBump(tbnMatrix, NormalTex.xyz,  mix(1.0,1-Puddle_shape,rainfall)	);
-		// normal = applyBump(tbnMatrix, NormalTex.xyz,  0.0);
+		normal = applyBump(tbnMatrix, NormalTex.xyz,  1.0-Puddle_shape);
 	#endif
 	
 	//////////////////////////////// 				////////////////////////////////
@@ -490,8 +486,8 @@ void main() {
 	#ifdef WORLD
 		vec4 SpecularTex = texture2D_POMSwitch(specular, adjustedTexCoord.xy, vec4(dcdx,dcdy), ifPOM,textureLOD);
 
-		SpecularTex.r = max(SpecularTex.r, Puddle_shape);
-		SpecularTex.g = max(SpecularTex.g, Puddle_shape*0.02);
+		SpecularTex.r = max(SpecularTex.r, rainfall);
+		SpecularTex.g = max(SpecularTex.g, max(Puddle_shape*0.02,0.02));
 
 		gl_FragData[1].rg = SpecularTex.rg;
 
@@ -547,12 +543,13 @@ void main() {
 	//////////////////////////////// 				////////////////////////////////
 
 	#ifdef WORLD
-
 		#ifdef Puddles
 			float porosity = 0.4;
+			
 			#ifdef Porosity
 				porosity = SpecularTex.z >= 64.5/255.0 ? 0.0 : (SpecularTex.z*255.0/64.0)*0.65;
 			#endif
+
 			if(SpecularTex.g < 229.5/255.0) Albedo.rgb = mix(Albedo.rgb, vec3(0), Puddle_shape*porosity);
 		#endif
 
@@ -560,9 +557,8 @@ void main() {
 		vec2 PackLightmaps = vec2(torchlightmap, lmtexcoord.w);
 		
 		vec4 data1 = clamp( encode(viewToWorld(normal), PackLightmaps), 0.0, 1.0);
-		// gl_FragData[0] = vec4(.0);
-		gl_FragData[0] = vec4(encodeVec2(Albedo.x,data1.x),	encodeVec2(Albedo.y,data1.y),	encodeVec2(Albedo.z,data1.z),	encodeVec2(data1.w,Albedo.w));
 
+		gl_FragData[0] = vec4(encodeVec2(Albedo.x,data1.x),	encodeVec2(Albedo.y,data1.y),	encodeVec2(Albedo.z,data1.z),	encodeVec2(data1.w,Albedo.w));
 
 		gl_FragData[2] = vec4(FlatNormals * 0.5 + 0.5, VanillaAO);	
 	#endif
