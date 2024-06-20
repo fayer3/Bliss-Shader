@@ -441,7 +441,8 @@ void main() {
         }
 
         if (blockId == BLOCK_CAVE_VINE_BERRIES || blockId == ITEM_GLOW_BERRIES) {
-            lightColor = vec3(0.651, 0.369, 0.157);
+            lightColor = vec3(1.0, 1.0, 0.5);
+            
             lightRange = 14.0;
             mixWeight = 1.0;
         }
@@ -524,7 +525,7 @@ void main() {
         }
 
         if (blockId == BLOCK_GLOW_LICHEN || blockId == ITEM_GLOW_LICHEN) {
-            lightColor = vec3(0.092, 0.217, 0.126);
+            lightColor = vec3(0.1, 0.2, 0.12);
             lightRange = 7.0;
         }
 
@@ -830,18 +831,8 @@ void main() {
         // reflective translucents / glass
 
         switch (blockId) {
-            case BLOCK_HONEY:
-                tintColor = vec3(0.984, 0.733, 0.251);
-                mixWeight = 1.0;
-                break;
-            case BLOCK_NETHER_PORTAL:
-                lightColor = vec3(0.502, 0.165, 0.831);
-                tintColor = vec3(0.502, 0.165, 0.831);
-                lightRange = 11.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_SLIME:
-                tintColor = vec3(0.408, 0.725, 0.329);
+            case BLOCK_GLASS:
+                tintColor = vec3(1.0);
                 mixWeight = 1.0;
                 break;
             case BLOCK_GLASS_BLACK:
@@ -908,6 +899,20 @@ void main() {
                 tintColor = vec3(0.965, 0.965, 0.123);
                 mixWeight = 1.0;
                 break;
+            case BLOCK_HONEY:
+                tintColor = vec3(0.984, 0.733, 0.251);
+                mixWeight = 1.0;
+                break;
+            case BLOCK_NETHER_PORTAL:
+                lightColor = vec3(0.502, 0.165, 0.831);
+                tintColor = vec3(0.502, 0.165, 0.831);
+                lightRange = 11.0;
+                mixWeight = 1.0;
+                break;
+            case BLOCK_SLIME:
+                tintColor = vec3(0.408, 0.725, 0.329);
+                mixWeight = 1.0;
+                break;
 
         // LPV shapes
 
@@ -957,6 +962,7 @@ void main() {
                 mixWeight = 0.5;
                 break;
             case BLOCK_SLAB_BOTTOM:
+            case BLOCK_SNOW_LAYERS:
                 mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 1u, 0u);
                 mixWeight = 0.5;
                 break;
