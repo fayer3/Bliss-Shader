@@ -72,7 +72,7 @@ uniform float caveDetection;
   #include "/lib/sky_gradient.glsl"
   #include "/lib/lightning_stuff.glsl"
   #include "/lib/climate_settings.glsl"
-  //#define CLOUDS_INTERSECT_TERRAIN
+  #define CLOUDS_INTERSECT_TERRAIN
 	// #define CLOUDSHADOWSONLY
   // #include "/lib/volumetricClouds.glsl"
 #endif
@@ -383,7 +383,7 @@ void main() {
         BiomeFogColor(cavefogCol);
       #endif
 
-      cavefogCol *= pow(1.0 - max(1.0 - linearDistance/far,0.0),2.0);
+      cavefogCol *= 1.0-pow(1.0-pow(1.0 - max(1.0 - linearDistance/far,0.0),2.0),CaveFogFallOff);
       cavefogCol *= exp(-7.0*clamp(normalize(np3).y*0.5+0.5,0.0,1.0)) * 0.999 + 0.001;
 
   	  float skyhole = pow(clamp(1.0-pow(max(np3.y - 0.6,0.0)*5.0,2.0),0.0,1.0),2);
@@ -433,7 +433,7 @@ void main() {
 ////// --------------- BLEND FOG INTO SCENE
 //////////// apply VL fog over opaque and translucents
 
-  color *= vl.a*cloudAlpha;
+  color *= vl.a*cloudAlpha ;
   color += vl.rgb;
   bloomyFogMult *= mix(vl.a,vl.a*0.5 + 0.5, rainStrength);
   
@@ -472,6 +472,8 @@ void main() {
       vl.a = 1.0;
     }
   #endif
+  
+  // if(texcoord.x > 0.5 )color.rgb = skyCloudsFromTex(np3, colortex4).rgb/30.0;
 
   gl_FragData[0].r = bloomyFogMult; // pass fog alpha so bloom can do bloomy fog
   gl_FragData[1].rgb = clamp(color.rgb, 0.0,68000.0);

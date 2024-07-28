@@ -35,6 +35,7 @@ uniform float sunElevation;
 // uniform float far;
 uniform float dhFarPlane;
 uniform float dhNearPlane;
+uniform float near;
 
 uniform int frameCounter;
 uniform float frameTimeCounter;
@@ -64,7 +65,7 @@ uniform float caveDetection;
 #include "/lib/DistantHorizons_projections.glsl"
 
 float DH_ld(float dist) {
-    return (2.0 * dhNearPlane) / (dhFarPlane + dhNearPlane - dist * (dhFarPlane - dhNearPlane));
+    return (2.0 * near) / (dhFarPlane + dhNearPlane - dist * (dhFarPlane - dhNearPlane));
 }
 float DH_inv_ld (float lindepth){
 	return -((2.0*dhNearPlane/lindepth)-dhFarPlane-dhNearPlane)/(dhFarPlane-dhNearPlane);
@@ -92,7 +93,7 @@ float linearizeDepthFast(const in float depth, const in float near, const in flo
 	#define TIMEOFDAYFOG
 	#include "/lib/lightning_stuff.glsl"
 
-	// #define CLOUDS_INTERSECT_TERRAIN
+	#define CLOUDS_INTERSECT_TERRAIN
 	// #define CLOUDSHADOWSONLY
 	#include "/lib/volumetricClouds.glsl"
 	#include "/lib/overworld_fog.glsl"
@@ -378,16 +379,18 @@ void main() {
 					VolumetricClouds = renderClouds(viewPos1, vec2(noise_1,noise_2), directLightColor, indirectLightColor, cloudDepth);
 				#endif
 
-				VolumetricFog2 = GetVolumetricFog(viewPos1, vec2(noise_1, noise_2), directLightColor, indirectLightColor,indirectLightColor_dynamic,cloudDepth);
+				float atmosphereAlpha = 1.0;
+				VolumetricFog2 = GetVolumetricFog(viewPos1, vec2(noise_1, noise_2), directLightColor, indirectLightColor,indirectLightColor_dynamic, atmosphereAlpha);
+				VolumetricClouds.a *= atmosphereAlpha;
 
 				#if defined CLOUDS_INTERSECT_TERRAIN
-					VolumetricFog2 = vec4(VolumetricClouds.rgb * VolumetricFog2.a + VolumetricFog2.rgb, VolumetricFog2.a*VolumetricClouds.a);
+					VolumetricFog2 = vec4(VolumetricClouds.rgb * VolumetricFog2.a * atmosphereAlpha  + VolumetricFog2.rgb, VolumetricFog2.a*VolumetricClouds.a);
 				#endif
 			}
 		#endif
 		
 		vec4 underwaterVlFog = vec4(0,0,0,1);
-		if(iswater) underwaterVlFog = waterVolumetrics_test(viewPos0, viewPos1, estimatedDepth, estimatedSunDepth, Vdiff, noise_1, totEpsilon, scatterCoef, indirectLightColor_dynamic, directLightColor, dot(normalize(viewPos1), normalize(sunVec*lightCol.a)) );		
+		if(iswater) underwaterVlFog = waterVolumetrics_test(viewPos0, viewPos1, estimatedDepth, estimatedSunDepth, Vdiff, noise_1, totEpsilon, scatterCoef, indirectLightColor_dynamic, directLightColor* (1.0-caveDetection), dot(normalize(viewPos1), normalize(sunVec*lightCol.a)) );		
 		
 		vec4 fogFinal = vec4(underwaterVlFog.rgb * VolumetricFog2.a + VolumetricFog2.rgb, VolumetricFog2.a * underwaterVlFog.a);
 

@@ -146,9 +146,9 @@ void main() {
    	}
 	
 	// maximum control of color and luminance
-	// vec3 minimumlight =  vec3(0.5,0.75,1.0) * (MIN_LIGHT_AMOUNT*0.001 + nightVision);
-	vec3 minimumlight =  vec3(0.5,0.75,1.0) * nightVision;
-	averageSkyCol_Clouds = max(	normalize(averageSkyCol_Clouds) * min(luma(averageSkyCol_Clouds) * 3.0,2.5) * (1.0-rainStrength*0.3), minimumlight);
+	vec3 minimumlight =  vec3(0.5,0.75,1.0) * (min(MIN_LIGHT_AMOUNT,0.0025) + nightVision);
+	// vec3 minimumlight =  vec3(0.5,0.75,1.0) * nightVision;
+	averageSkyCol_Clouds = max(	normalize(averageSkyCol_Clouds) * min(luma(averageSkyCol_Clouds) * 3.0,2.5) * (1.0-rainStrength*0.7), minimumlight);
 	averageSkyCol = max(averageSkyCol * PLANET_GROUND_BRIGHTNESS, minimumlight);
 
 ////////////////////////////////////////
@@ -257,7 +257,7 @@ void main() {
 	// exposure = mix(0.0, 1.0, min(targetExposure,1.0));
 	// exposure = 1;
 
-	float currCenterDepth = ld(texture2D(depthtex2, vec2(0.5)).r);
+	float currCenterDepth = ld(texture2D(depthtex2, vec2(0.5)*RENDER_SCALE).r);
 	centerDepth = mix(sqrt(texelFetch2D(colortex4,ivec2(14,37),0).g/65000.0), currCenterDepth, clamp(DoF_Adaptation_Speed*exp(-0.016/frameTime+1.0)/(6.0+currCenterDepth*far),0.0,1.0));
 	centerDepth = centerDepth * centerDepth * 65000.0;
 

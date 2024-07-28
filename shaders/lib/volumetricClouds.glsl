@@ -244,7 +244,7 @@ vec3 DoCloudLighting(
 	float distantfog
 ){
 	float powder = 1.0 - exp(-10.0 * density);
-	vec3 directLight = sunMultiScatter * exp(-3.0 * sunShadows) * powder + sunScatter * exp(-10.0 * sunShadows);
+	vec3 directLight = sunScatter * exp(-10.0 * sunShadows) + sunMultiScatter * exp(-3.0 * sunShadows) * powder;
 
 	vec3 indirectLight = skyLightCol * mix(1.0,  2.0 * (1.0 - sqrt((skyScatter*skyScatter*skyScatter)*density)) , pow(distantfog,1.0 - rainStrength*0.5));
 	
@@ -282,7 +282,6 @@ vec4 renderLayer(
 ){
 	vec3 COLOR = vec3(0.0);
 	float TOTAL_EXTINCTION = 1.0;
-
 	bool IntersecTerrain = false;
 
 	#ifdef CLOUDS_INTERSECT_TERRAIN
@@ -316,6 +315,7 @@ if(layer == 2){
 
 			float directLight = 0.0;
 			for (int j = 0; j < 2; j++){
+				
 				// lower the step size as the sun gets higher in the sky
 				vec3 shadowSamplePos_high = rayProgress + dV_Sun * (1.0 + j * dither) / (pow(abs(dV_Sun.y*0.5),3.0) * 0.995 + 0.005);
 
@@ -384,16 +384,16 @@ if(layer == 2){
 
 				COLOR += max(lighting - lighting*exp(-mult*muE),0.0) * TOTAL_EXTINCTION;
 				TOTAL_EXTINCTION *= max(exp(-mult*muE),0.0);
-				
+
 				if (TOTAL_EXTINCTION < 1e-5) break;
+	 			
 			}
 
 		}
 		
 		rayProgress += dV_view;
-
-
 	}
+	
 	return vec4(COLOR, TOTAL_EXTINCTION);
 }
 }
@@ -413,6 +413,9 @@ vec3 layerStartingPosition(
 	vec3 position = dV_view*dither + cameraPos + (dV_view/abs(dV_view.y)) * flip;
 	
 	return position;
+}
+float invLinZ_cloud (float lindepth){
+	return -((2.0*near/lindepth)-far-near)/(far-near);
 }
 vec4 renderClouds(
 	vec3 FragPosition,
@@ -467,7 +470,7 @@ vec4 renderClouds(
 		dV_Sun *= lightCol.a;
 	#endif
 	
-	float SdotV = dot(mat3(gbufferModelView)*WsunVec, normalize(FragPosition)) ;
+	float SdotV = dot(WsunVec, normalize(mat3(gbufferModelViewInverse)*FragPosition + gbufferModelViewInverse[3].xyz));
 
 	float mieDay = phaseg(SdotV, 0.85) + phaseg(SdotV, 0.75);
 	float mieDayMulti = (phaseg(SdotV, 0.35) + phaseg(-SdotV, 0.35) * 0.5) ;
@@ -549,7 +552,7 @@ vec4 renderClouds(
 		total_extinction *= layer1.a;
 
 		// stop overdraw.
-		altoNotVisible = (layer1.a < 1e-5  || notVisible)&& below_Layer1;	
+		altoNotVisible = (layer1.a < 1e-5  || notVisible) && below_Layer1;	
 	#endif
 
 	#ifdef CloudLayer2
@@ -593,10 +596,9 @@ vec4 renderClouds(
 	#endif
 
 	#ifndef SKY_GROUND
-		vec3 normView = normalize(dV_viewTEST);
-		vec4 fogcolor = vec4(skyFromTex(normView, colortex4)/30.0, 0.0);
 		
-		return mix(fogcolor, vec4(color, total_extinction), clamp(distantfog2,0.0,1.0));
+		// return mix(fogcolor, vec4(color, total_extinction), clamp(distantfog2,0.0,1.0));
+		return mix(vec4(vec3(0.0),1.0), vec4(color, total_extinction), clamp(distantfog2,0.0,1.0));
 	#else
 		return vec4(color, total_extinction);
 	#endif

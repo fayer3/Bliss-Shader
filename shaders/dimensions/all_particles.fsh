@@ -103,14 +103,8 @@ vec3 toScreenSpace(vec3 p) {
 
 uniform int framemod8;
 
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/TAA_jitter.glsl"
+
 
 //Mie phase function
 float phaseg(float x, float g){
@@ -259,6 +253,8 @@ vec4 texture2D_POMSwitch(
 	return texture2DGradARB(sampler, lightmapCoord, dcdxdcdy.xy, dcdxdcdy.zw);
 }
 
+uniform vec3 eyePosition;
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -363,14 +359,20 @@ void main() {
 
 	vec3 Albedo = toLinear(TEXTURE.rgb);
 	
-	vec2 lightmap = lmtexcoord.zw;
+	vec2 lightmap = clamp(lmtexcoord.zw,0.0,1.0);
+
 
 	#ifndef OVERWORLD_SHADER
 		lightmap.y = 1.0;
 	#endif
 
-	#ifdef Hand_Held_lights
-		lightmap.x = max(lightmap.x, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(feetPlayerPos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
+	#if defined Hand_Held_lights && !defined LPV_ENABLED
+		#ifdef IS_IRIS
+			vec3 playerCamPos = eyePosition;
+		#else
+			vec3 playerCamPos = cameraPosition;
+		#endif
+		lightmap.x = max(lightmap.x, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length((feetPlayerPos+cameraPosition) - playerCamPos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
 	#endif
 
 	#ifdef WEATHER
@@ -424,32 +426,37 @@ void main() {
 			#endif
 
 			AmbientLightColor = averageSkyCol_Clouds / 30.0;
+
 			#ifdef IS_IRIS
 				AmbientLightColor *= 2.5;
 			#else
 				AmbientLightColor *= 0.5;
 			#endif
-
+			
+			Indirect_lighting = doIndirectLighting(AmbientLightColor, MinimumLightColor, lightmap.y);
 		#endif
 		
 		#ifdef NETHER_SHADER
-			AmbientLightColor = skyCloudsFromTexLOD2(vec3(0.0,1.0,0.0), colortex4, 6).rgb / 30.0;
+			Indirect_lighting = skyCloudsFromTexLOD2(vec3(0.0,1.0,0.0), colortex4, 6).rgb / 30.0;
 		#endif
 
 		#ifdef END_SHADER
-			AmbientLightColor = vec3(0.3,0.6,1.0) * 0.5;
+			Indirect_lighting = vec3(0.3,0.6,1.0) * 0.5;
 		#endif
 
+	///////////////////////// BLOCKLIGHT LIGHTING OR LPV LIGHTING OR FLOODFILL COLORED LIGHTING
 		#ifdef IS_LPV_ENABLED
 			vec3 lpvPos = GetLpvPosition(feetPlayerPos);
 		#else
 			const vec3 lpvPos = vec3(0.0);
 		#endif
 
-		Indirect_lighting = DoAmbientLightColor(feetPlayerPos, lpvPos, AmbientLightColor, MinimumLightColor, Torch_Color, clamp(lightmap.xy,0,1), exposure);
+		Indirect_lighting += doBlockLightLighting( vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, exposure, feetPlayerPos, lpvPos);
 
 		#ifdef LINES
 			gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * toLinear(color.rgb);
+
+			if(SELECTION_BOX > 0) gl_FragData[0].rgba = vec4(toLinear(vec3(SELECT_BOX_COL_R, SELECT_BOX_COL_G, SELECT_BOX_COL_B)), 1.0);
 		#else
 			gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * Albedo;
 		#endif

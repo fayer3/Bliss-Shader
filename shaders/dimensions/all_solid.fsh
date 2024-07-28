@@ -274,7 +274,7 @@ vec4 texture2D_POMSwitch(
 	}
 }
 
-
+uniform vec3 eyePosition;
 
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -307,15 +307,21 @@ void main() {
 							  tangent.z, tangent2.z, normal.z);
 	#endif
 
-	vec2 tempOffset=offsets[framemod8];
+	vec2 tempOffset = offsets[framemod8];
 
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 	vec3 worldpos = mat3(gbufferModelViewInverse) * fragpos  + gbufferModelViewInverse[3].xyz + cameraPosition;
 
 	float torchlightmap = lmtexcoord.z;
 
-	#ifdef Hand_Held_lights
-		if(HELD_ITEM_BRIGHTNESS > 0.0) torchlightmap = max(torchlightmap, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(worldpos-cameraPosition)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
+	#if defined Hand_Held_lights && !defined LPV_ENABLED
+		#ifdef IS_IRIS
+			vec3 playerCamPos = eyePosition;
+		#else
+			vec3 playerCamPos = cameraPosition;
+		#endif
+
+		if(HELD_ITEM_BRIGHTNESS > 0.0) torchlightmap = max(torchlightmap, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(worldpos-playerCamPos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
 
 		#ifdef HAND
 			torchlightmap *= 0.9;
@@ -350,14 +356,13 @@ void main() {
 	if(!ifPOM) maxdist = 0.0;
 
 	gl_FragDepth = gl_FragCoord.z;
-
 	if (dist < maxdist) {
 
 		float depthmap = readNormal(vtexcoord.st).a;
 		float used_POM_DEPTH = 1.0;
 
  		if ( viewVector.z < 0.0 && depthmap < 0.9999 && depthmap > 0.00001) {	
-			// float noise = blueNoise();
+			float noise = blueNoise();
 			#ifdef Adaptive_Step_length
 				vec3 interval = (viewVector.xyz /-viewVector.z/MAX_OCCLUSION_POINTS * POM_DEPTH) * clamp(1.0-pow(depthmap,2),0.1,1.0);
 				used_POM_DEPTH = 1.0;
@@ -366,9 +371,9 @@ void main() {
 			#endif
 			vec3 coord = vec3(vtexcoord.st , 1.0);
 
-			coord += interval  * used_POM_DEPTH;
+			coord += interval * noise * used_POM_DEPTH;
 
-			float sumVec = 0.5;
+			float sumVec = noise;
 			for (int loopCount = 0; (loopCount < MAX_OCCLUSION_POINTS) && (1.0 - POM_DEPTH + POM_DEPTH * readNormal(coord.st).a  ) < coord.p  && coord.p >= 0.0; ++loopCount) {
 				coord = coord + interval  * used_POM_DEPTH; 
 				sumVec += used_POM_DEPTH; 
@@ -397,7 +402,7 @@ void main() {
 	//////////////////////////////// 				//////////////////////////////// 
 	float textureLOD = bias();
 	vec4 Albedo = texture2D_POMSwitch(texture, adjustedTexCoord.xy, vec4(dcdx,dcdy), ifPOM, textureLOD) * color;
-
+	
 	#if defined HAND
 		if (Albedo.a < 0.1) discard;
 	#endif
@@ -431,7 +436,7 @@ void main() {
 			Albedo.rgb = mix(Albedo.rgb, aerochrome_color, strength);
 		}
 		#ifdef AEROCHROME_WOOL_ENABLED
-			else if(blockID == BLOCK_SSS_WEAK_2) {
+			else if (blockID == BLOCK_SSS_WEAK_2 || blockID == BLOCK_CARPET) {
 			// Wool
 				Albedo.rgb = mix(Albedo.rgb, aerochrome_color, 0.3);
 			}
@@ -502,7 +507,7 @@ void main() {
 
 		#if EMISSIVE_TYPE == 2
 			gl_FragData[1].a = SpecularTex.a;
-			if(SpecularTex.a <= 0.0) gl_FragData[2].a = EMISSIVE;
+			if(SpecularTex.a <= 0.0) gl_FragData[1].a = EMISSIVE;
 		#endif
 
 		#if EMISSIVE_TYPE == 3		
@@ -525,13 +530,6 @@ void main() {
 		#if SSS_TYPE == 3		
 			gl_FragData[1].b = SpecularTex.b;
 		#endif
-		
-		// #ifndef ENTITIES
-		// 	if(PORTAL > 0){
-		// 		gl_FragData[2].rgb = vec3(0);
-		// 		gl_FragData[2].a = clamp(ENDPORTAL_EFFECT * 0.9, 0,0.9);
-		// 	}
-		// #endif
 	#endif
 
 	// hit glow effect...
@@ -558,7 +556,7 @@ void main() {
 		vec2 PackLightmaps = vec2(torchlightmap, lmtexcoord.w);
 		
 		vec4 data1 = clamp( encode(viewToWorld(normal), PackLightmaps), 0.0, 1.0);
-
+		
 		gl_FragData[0] = vec4(encodeVec2(Albedo.x,data1.x),	encodeVec2(Albedo.y,data1.y),	encodeVec2(Albedo.z,data1.z),	encodeVec2(data1.w,Albedo.w));
 
 		gl_FragData[2] = vec4(FlatNormals * 0.5 + 0.5, VanillaAO);	

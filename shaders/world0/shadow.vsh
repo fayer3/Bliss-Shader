@@ -3,6 +3,7 @@
 #ifdef IS_LPV_ENABLED
 	#extension GL_ARB_explicit_attrib_location: enable
 	#extension GL_ARB_shader_image_load_store: enable
+	#extension GL_ARB_shading_language_packing : enable
 #endif
 
 #define RENDER_SHADOW
@@ -59,6 +60,11 @@ uniform int entityId;
 	#else
 		attribute vec3 at_midBlock;
 	#endif
+
+	#ifdef LPV_ENTITY_LIGHTS
+		uniform usampler1D texBlockData;
+	#endif
+	
     uniform int currentRenderedItemId;
 	uniform int renderStage;
 

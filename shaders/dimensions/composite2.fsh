@@ -28,6 +28,7 @@ uniform vec3 sunVec;
 uniform float sunElevation;
 
 // uniform float far;
+uniform float near;
 uniform float dhFarPlane;
 uniform float dhNearPlane;
 
@@ -69,6 +70,8 @@ float DH_inv_ld (float lindepth){
 float linearizeDepthFast(const in float depth, const in float near, const in float far) {
     return (near * far) / (depth * (near - far) + far);
 }
+
+#define IS_LPV_ENABLED
 
 #if defined LPV_VL_FOG_ILLUMINATION && defined IS_LPV_ENABLED
 	
@@ -114,7 +117,7 @@ float linearizeDepthFast(const in float depth, const in float near, const in flo
         		vec3 LpvTorchLight = GetLpvBlockLight(lpvSample);
 
 				vec3 lighting = LpvTorchLight;
-				float density = exp(-5.0 * clamp( 1.0 - length(lpvSample.xyz) / 16.0,0.0,1.0)) * (LPV_VL_FOG_ILLUMINATION_BRIGHTNESS/100) * LpvFadeF;
+				float density = exp(-5.0 * clamp( 1.0 - length(lpvSample.xyz) / 16.0,0.0,1.0)) * (LPV_VL_FOG_ILLUMINATION_BRIGHTNESS/100.0) * LpvFadeF;
 
 				color = lighting - lighting * exp(-density*dd*dL);
 			}
@@ -124,7 +127,9 @@ float linearizeDepthFast(const in float depth, const in float near, const in flo
 	}
 
 #endif
-
+float invLinZ (float lindepth){
+	return -((2.0*near/lindepth)-far-near)/(far-near);
+}
 #ifdef OVERWORLD_SHADER
 	const bool shadowHardwareFiltering = true;
 	uniform sampler2DShadow shadow;
@@ -138,7 +143,7 @@ float linearizeDepthFast(const in float depth, const in float near, const in flo
 	// uniform int dhRenderDistance;
 	#define TIMEOFDAYFOG
 	#include "/lib/lightning_stuff.glsl"
-	// #define CLOUDS_INTERSECT_TERRAIN
+	#define CLOUDS_INTERSECT_TERRAIN
 	#include "/lib/volumetricClouds.glsl"
 	#include "/lib/overworld_fog.glsl"
 #endif
@@ -346,6 +351,8 @@ float encodeVec2(vec2 a){
 
 
 
+// uniform int framemod8;
+// #include "/lib/TAA_jitter.glsl"
 
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -364,7 +371,7 @@ void main() {
 	float noise_1 = max(1.0 - R2_dither(),0.0015);
 	float noise_2 = blueNoise();
 	
-	vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
+	vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize + texelSize*0.5;
 
 	bool iswater = texture2D(colortex7,tc).a > 0.99;
 
@@ -376,7 +383,10 @@ void main() {
 		float DH_z0 = 0.0;
 	#endif
 	
-	vec3 viewPos0 = toScreenSpace_DH(tc/RENDER_SCALE, z0, DH_z0);
+	vec3 viewPos0 = toScreenSpace_DH(tc/RENDER_SCALE , z0, DH_z0);
+	vec3 playerPos_normalized = normalize(mat3(gbufferModelViewInverse) * viewPos0 + gbufferModelViewInverse[3].xyz);
+
+
 
 	float dirtAmount = Dirt_Amount + 0.01;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
@@ -393,10 +403,18 @@ void main() {
 
 	#if defined OVERWORLD_SHADER && defined CLOUDS_INTERSECT_TERRAIN
 		vec4 VolumetricClouds = renderClouds(viewPos0, vec2(noise_1,noise_2), directLightColor, indirectLightColor, cloudDepth);
+		
+		#ifdef CAVE_FOG
+  	  		float skyhole = (1.0-pow(clamp(1.0-pow(max(playerPos_normalized.y - 0.6,0.0)*5.0,2.0),0.0,1.0),2)* caveDetection) ;
+			VolumetricClouds.rgb *= skyhole;
+			VolumetricClouds.a = mix(VolumetricClouds.a, 1.0,   (1.0-skyhole) * caveDetection);
+		#endif
 	#endif
 
 	#ifdef OVERWORLD_SHADER
-		vec4 VolumetricFog = GetVolumetricFog(viewPos0, vec2(noise_2,noise_1), directLightColor, indirectLightColor, averageSkyCol_Clouds/30.0, cloudDepth);
+		float atmosphereAlpha = 1.0;
+		vec4 VolumetricFog = GetVolumetricFog(viewPos0, vec2(noise_2,noise_1), directLightColor, indirectLightColor, averageSkyCol_Clouds/30.0, atmosphereAlpha);
+		VolumetricClouds.a *= atmosphereAlpha;
 	#endif
 	
 	#if defined NETHER_SHADER || defined END_SHADER
@@ -404,7 +422,7 @@ void main() {
 	#endif
 	
 	#if defined OVERWORLD_SHADER && defined CLOUDS_INTERSECT_TERRAIN
-		VolumetricFog = vec4(VolumetricClouds.rgb * VolumetricFog.a + VolumetricFog.rgb, VolumetricFog.a);
+		VolumetricFog = vec4(VolumetricClouds.rgb * VolumetricFog.a * atmosphereAlpha + VolumetricFog.rgb, VolumetricFog.a);
 	#endif
 
 	gl_FragData[0] = clamp(VolumetricFog, 0.0, 65000.0);

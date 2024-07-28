@@ -35,14 +35,8 @@ uniform vec4 Moon_Weather_properties; // R = cloud coverage 		G = fog density
 uniform int hideGUI;
 
 uniform int framemod8;
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/TAA_jitter.glsl"
+
 
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
@@ -140,10 +134,10 @@ void main() {
 
 
 	#ifdef OLD_BLOOM
-		vec3 bloom = texture2D(colortex3,texcoord/clampedRes*vec2(1920.,1080.)*BLOOM_QUALITY).rgb / 2.0 / 7.0;
+		vec3 bloom = texture2D(colortex3, texcoord/clampedRes*vec2(1920.,1080.)*BLOOM_QUALITY	).rgb / 2.0 / 7.0;
 		float lightScat = clamp((BLOOM_STRENGTH+3) * 0.05 * pow(exposure.a, 0.2)  ,0.0,1.0) * vignette;
 	#else
-		vec3 bloom = texture2D(colortex3,texcoord/clampedRes*vec2(1920.,1080.)*BLOOM_QUALITY).rgb / 3.0 / bloomWeight();
+		vec3 bloom = texture2D(colortex3, texcoord/clampedRes*vec2(1920.,1080.)*BLOOM_QUALITY ).rgb / 3.0 / bloomWeight();
 		float lightScat = clamp(BLOOM_STRENGTH * 0.5 * pow(exposure.a, 0.2)  ,0.0,1.0) * vignette;
 	#endif
 
@@ -158,8 +152,6 @@ void main() {
   	VL_abs = clamp((1.0-VL_abs)*BLOOMY_FOG*0.75*(1.0+rainStrength) * (1.0-purkinje*0.3),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
 	
 	col = (mix(col, bloom, VL_abs) + bloom * lightScat) * exposure.rgb;
-
-	// if(hideGUI > 0) col = bloom  * lightScat* exposure.rgb;
 	
   	float lum = dot(col, vec3(0.15,0.3,0.55));
 	float lum2 = dot(col, vec3(0.85,0.7,0.45));
@@ -178,7 +170,6 @@ void main() {
 	#endif
 
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
-
 	
 	#if DOF_QUALITY == 5
 		#if FOCUS_LASER_COLOR == 0 // Red

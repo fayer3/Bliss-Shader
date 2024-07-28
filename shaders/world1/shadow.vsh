@@ -1,8 +1,10 @@
 #version 120
-#extension GL_ARB_explicit_attrib_location: enable
-#extension GL_ARB_shader_image_load_store: enable
-
 #include "/lib/settings.glsl"
+#ifdef IS_LPV_ENABLED
+	#extension GL_ARB_explicit_attrib_location: enable
+	#extension GL_ARB_shader_image_load_store: enable
+	#extension GL_ARB_shading_language_packing : enable
+#endif
 
 #define RENDER_SHADOW
 
@@ -22,6 +24,10 @@ Read the terms of modification and sharing before changing something below pleas
 		attribute vec3 at_midBlock;
 	#endif
 	attribute vec3 vaPosition;
+
+	#ifdef LPV_ENTITY_LIGHTS
+		uniform usampler1D texBlockData;
+	#endif
 
 	uniform mat4 shadowModelViewInverse;
 	
