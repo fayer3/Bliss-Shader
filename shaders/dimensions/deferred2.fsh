@@ -39,7 +39,7 @@ uniform mat4 gbufferProjection;
 // flat varying vec2 TAA_Offset;
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
+#define  projMAD(m, v) (((m) * vec4(v, 1.0)).xyz)
 
 
 vec3 toScreenSpace(vec3 p) {
