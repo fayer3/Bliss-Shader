@@ -32,14 +32,8 @@ uniform int frameCounter;
 uniform float frameTimeCounter;
 
 uniform int framemod8;
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/TAA_jitter.glsl"
+
 
 
 #include "/lib/util.glsl"
@@ -65,8 +59,8 @@ void main() {
 	exposure = texelFetch2D(colortex4,ivec2(10,37),0).r;
 	
 	#if defined Daily_Weather
-		dailyWeatherParams0 = vec4(texelFetch2D(colortex4,ivec2(1,1),0).rgb/150.0, 0.0);
-		dailyWeatherParams1 = vec4(texelFetch2D(colortex4,ivec2(2,1),0).rgb/150.0, 0.0);
+		dailyWeatherParams0 = vec4((texelFetch2D(colortex4,ivec2(1,1),0).rgb/150.0)/2.0, 0.0);
+		dailyWeatherParams1 = vec4((texelFetch2D(colortex4,ivec2(2,1),0).rgb/150.0)/2.0, 0.0);
 	#endif
 	
 	#ifdef TAA

@@ -8,27 +8,19 @@ void GriAndEminShadowFix(
 	float SkyLightmap
 ){
 
-	float minvalue = 0.007;
+	float MinimumValue = 0.05;
 
-	#ifdef DISTANT_HORIZONS_SHADOWMAP
-		minvalue = 0.035;
-	#endif
+	// give a tiny boost to the distance mulitplier when shadowmap resolution is below 2048.0
+	float ResMultiplier = 1.0 + (shadowDistance/8.0)*(1.0 - min(shadowMapResolution,2048)/2048.0)*0.3;
 
-	// float DistanceOffset = clamp(0.17 + length(WorldPos) / (shadowMapResolution*0.20), 0.0,1.0) ;
-	// float DistanceOffset = clamp(0.17 + length(WorldPos) / (shadowMapResolution*0.20), 0.0,1.0) ;
-	float shadowResScale = (2048.0/shadowMapResolution) / 4.0;
-	float DistanceOffset = (length(WorldPos)+4.0) * (minvalue + shadowResScale*0.015);
-	
-	
-	
-	vec3 Bias = FlatNormal * DistanceOffset; // adjust the bias thingy's strength as it gets farther away.
-	
-	vec3 finalBias = Bias;
+	float DistanceMultiplier = max(1.0 - max(1.0 - length(WorldPos) / shadowDistance, 0.0), MinimumValue) * ResMultiplier;
+
+	vec3 Bias = FlatNormal * DistanceMultiplier;
 
 	// stop lightleaking by zooming up, centered on blocks
 	vec2 scale = vec2(0.5); scale.y *= 0.5;
 	vec3 zoomShadow =  scale.y - scale.x * fract(WorldPos + cameraPosition + Bias*scale.y);
-	if(SkyLightmap < 0.1) finalBias = mix(Bias, zoomShadow, clamp(VanillaAO*5,0,1));
+	if(SkyLightmap < 0.1) Bias = zoomShadow;
 
-	WorldPos += finalBias;
+	WorldPos += Bias;
 }

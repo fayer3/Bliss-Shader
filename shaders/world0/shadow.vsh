@@ -3,6 +3,7 @@
 #ifdef IS_LPV_ENABLED
 	#extension GL_ARB_explicit_attrib_location: enable
 	#extension GL_ARB_shader_image_load_store: enable
+	#extension GL_ARB_shading_language_packing : enable
 #endif
 
 #define RENDER_SHADOW
@@ -54,7 +55,16 @@ uniform int entityId;
 #include "/lib/entities.glsl"
 
 #ifdef IS_LPV_ENABLED
-	attribute vec3 at_midBlock;
+	#ifdef IRIS_FEATURE_BLOCK_EMISSION_ATTRIBUTE
+		attribute vec4 at_midBlock;
+	#else
+		attribute vec3 at_midBlock;
+	#endif
+
+	#ifdef LPV_ENTITY_LIGHTS
+		uniform usampler1D texBlockData;
+	#endif
+	
     uniform int currentRenderedItemId;
 	uniform int renderStage;
 
@@ -126,7 +136,13 @@ vec4 toClipSpace3(vec3 viewSpacePosition) {
 
     return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),1.0);
 }
-
+vec3 viewToWorld(vec3 viewPos) {
+    vec4 pos;
+    pos.xyz = viewPos;
+    pos.w = 0.0;
+    pos = shadowModelViewInverse * pos;
+    return pos.xyz;
+}
 
 // uniform int renderStage;
 
@@ -186,77 +202,68 @@ void main() {
 	// 	}
 	// #endif
 
-	int blockId = int(mc_Entity.x + 0.5);
-
 	#if defined IS_LPV_ENABLED || defined WAVY_PLANTS
 		vec3 playerpos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
 	#endif
 
 	#if defined IS_LPV_ENABLED && defined MC_GL_EXT_shader_image_load_store
-		if (
-			renderStage == MC_RENDER_STAGE_TERRAIN_SOLID || renderStage == MC_RENDER_STAGE_TERRAIN_TRANSLUCENT ||
-			renderStage == MC_RENDER_STAGE_TERRAIN_CUTOUT || renderStage == MC_RENDER_STAGE_TERRAIN_CUTOUT_MIPPED
-		) {
-			uint voxelId = uint(blockId);
-			if (voxelId == 0u) voxelId = 1u;
-
-			vec3 originPos = playerpos + at_midBlock/64.0;
-
-			SetVoxelBlock(originPos, voxelId);
-		}
-		
-		#ifdef LPV_ENTITY_LIGHTS
-			if (
-				(currentRenderedItemId > 0 || entityId > 0) &&
-				(renderStage == MC_RENDER_STAGE_BLOCK_ENTITIES || renderStage == MC_RENDER_STAGE_ENTITIES)
-			) {
-				uint voxelId = 0u;
-
-				if (currentRenderedItemId > 0 && currentRenderedItemId < 1000) {
-					if (entityId != ENTITY_ITEM_FRAME && entityId != ENTITY_PLAYER)
-						voxelId = uint(currentRenderedItemId);
-				}
-				else {
-					switch (entityId) {
-						case ENTITY_BLAZE:
-						case ENTITY_END_CRYSTAL:
-						// case ENTITY_FIREBALL_SMALL:
-						case ENTITY_GLOW_SQUID:
-						case ENTITY_MAGMA_CUBE:
-						case ENTITY_SPECTRAL_ARROW:
-						case ENTITY_TNT:
-							voxelId = uint(entityId);
-							break;
-					}
-				}
-
-				if (voxelId > 0u)
-					SetVoxelBlock(playerpos, voxelId);
-			}
-		#endif
+		PopulateShadowVoxel(playerpos);
 	#endif
+
+	// #ifdef WAVY_PLANTS
+  	// 	bool istopv = gl_MultiTexCoord0.t < mc_midTexCoord.t;
+  	// 	if (
+  	// 		(
+  	// 			blockId == BLOCK_GROUND_WAVING || blockId == BLOCK_GROUND_WAVING_VERTICAL ||
+  	// 			blockId == BLOCK_GRASS_SHORT || (blockId == BLOCK_GRASS_TALL_UPPER && istopv) ||
+  	// 			blockId == BLOCK_SAPLING
+	// 		) && length(position.xy) < 24.0
+	// 	) {
+	// 		playerpos += calcMovePlants(playerpos + cameraPosition)*gl_MultiTexCoord1.y;
+	// 		position = mat3(shadowModelView) * playerpos + shadowModelView[3].xyz;
+  	// 	}
+
+  	// 	if (blockId == BLOCK_AIR_WAVING && length(position.xy) < 24.0) {
+	// 		playerpos += calcMoveLeaves(playerpos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*gl_MultiTexCoord1.y;
+	// 		position = mat3(shadowModelView) * playerpos + shadowModelView[3].xyz;
+  	// 	}
+	// #endif
+
+	int blockId = int(mc_Entity.x + 0.5);
 
 	#ifdef WAVY_PLANTS
-  		bool istopv = gl_MultiTexCoord0.t < mc_midTexCoord.t;
-  		if (
-  			(
-  				blockId == BLOCK_GROUND_WAVING || blockId == BLOCK_GROUND_WAVING_VERTICAL ||
-  				blockId == BLOCK_GRASS_SHORT || (blockId == BLOCK_GRASS_TALL_UPPER && istopv) ||
-  				blockId == BLOCK_SAPLING
-			) && length(position.xy) < 24.0
-		) {
-			playerpos += calcMovePlants(playerpos + cameraPosition)*gl_MultiTexCoord1.y;
-			position = mat3(shadowModelView) * playerpos + shadowModelView[3].xyz;
-  		}
+		// also use normal, so up/down facing geometry does not get detatched from its model parts.
+		bool InterpolateFromBase = gl_MultiTexCoord0.t < max(mc_midTexCoord.t, abs(viewToWorld(normalize(gl_NormalMatrix * gl_Normal)).y));
 
-  		if (blockId == BLOCK_AIR_WAVING && length(position.xy) < 24.0) {
-			playerpos += calcMoveLeaves(playerpos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*gl_MultiTexCoord1.y;
-			position = mat3(shadowModelView) * playerpos + shadowModelView[3].xyz;
-  		}
+		if(	
+			(
+				// these wave off of the ground. the area connected to the ground does not wave.
+				(InterpolateFromBase && (blockId == BLOCK_GRASS_TALL_LOWER || blockId == BLOCK_GROUND_WAVING || blockId == BLOCK_GRASS_SHORT || blockId == BLOCK_SAPLING || blockId == BLOCK_GROUND_WAVING_VERTICAL)) 
+
+				// these wave off of the ceiling. the area connected to the ceiling does not wave.
+				|| (!InterpolateFromBase && (blockId == BLOCK_VINE_OTHER))
+
+				// these wave off of the air. they wave uniformly
+				|| (blockId == BLOCK_GRASS_TALL_UPPER || blockId == BLOCK_AIR_WAVING)
+
+			) && length(position.xy) < 24.0
+		){
+			vec3 worldpos = playerpos;
+
+			// apply displacement for waving plant blocks
+			worldpos += calcMovePlants(playerpos + cameraPosition) * max(gl_MultiTexCoord1.y,0.5);
+
+			// apply displacement for waving leaf blocks specifically, overwriting the other waving mode. these wave off of the air. they wave uniformly
+			if(blockId == BLOCK_AIR_WAVING) worldpos = playerpos + calcMoveLeaves(playerpos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*gl_MultiTexCoord1.y;
+			
+			position = mat3(shadowModelView) * worldpos + shadowModelView[3].xyz;
+		}
 	#endif
+
 	
 	#ifdef DISTORT_SHADOWMAP
-		if(entityId == 1100) position.xyz = position.xyz - normalize(gl_NormalMatrix * gl_Normal) * 0.25;
+		if (entityId == ENTITY_SSS_MEDIUM || entityId == ENTITY_SLIME)
+			position.xyz = position.xyz - normalize(gl_NormalMatrix * gl_Normal) * 0.25;
 
 		gl_Position = BiasShadowProjection(toClipSpace3(position));
 	#else

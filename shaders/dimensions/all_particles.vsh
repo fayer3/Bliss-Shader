@@ -45,14 +45,7 @@ uniform int heldItemId;
 uniform int heldItemId2;
 flat varying float HELD_ITEM_BRIGHTNESS;
 
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/TAA_jitter.glsl"
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
@@ -105,7 +98,7 @@ void main() {
 	HELD_ITEM_BRIGHTNESS = 0.0;
 
 	#ifdef Hand_Held_lights
-		if(heldItemId == ITEM_LIGHT_SOURCES || heldItemId2 == ITEM_LIGHT_SOURCES) HELD_ITEM_BRIGHTNESS = 0.9;
+		if(heldItemId > 999 || heldItemId2 > 999) HELD_ITEM_BRIGHTNESS = 0.9;
 	#endif
 
 
@@ -147,8 +140,8 @@ void main() {
 	
 		WsunVec = lightCol.a * normalize(mat3(gbufferModelViewInverse) * sunPosition);
 		#if defined Daily_Weather
-			dailyWeatherParams0 = vec4(texelFetch2D(colortex4,ivec2(1,1),0).rgb/150.0, 0.0);
-			dailyWeatherParams1 = vec4(texelFetch2D(colortex4,ivec2(2,1),0).rgb/150.0, 0.0);
+			dailyWeatherParams0 = vec4((texelFetch2D(colortex4,ivec2(1,1),0).rgb/150.0) / 2.0, 0.0);
+			dailyWeatherParams1 = vec4((texelFetch2D(colortex4,ivec2(2,1),0).rgb/150.0) / 2.0, 0.0);
 		#endif
 	#endif
 	

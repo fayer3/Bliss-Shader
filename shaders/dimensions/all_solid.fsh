@@ -2,6 +2,8 @@
 
 #include "/lib/settings.glsl"
 #include "/lib/blocks.glsl"
+#include "/lib/entities.glsl"
+#include "/lib/items.glsl"
 
 flat varying int NameTags;
 
@@ -274,7 +276,7 @@ vec4 texture2D_POMSwitch(
 	}
 }
 
-
+uniform vec3 eyePosition;
 
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -307,31 +309,39 @@ void main() {
 							  tangent.z, tangent2.z, normal.z);
 	#endif
 
-	vec2 tempOffset=offsets[framemod8];
+	vec2 tempOffset = offsets[framemod8];
 
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 	vec3 worldpos = mat3(gbufferModelViewInverse) * fragpos  + gbufferModelViewInverse[3].xyz + cameraPosition;
 
 	float torchlightmap = lmtexcoord.z;
 
-	#ifdef Hand_Held_lights
-		if(HELD_ITEM_BRIGHTNESS > 0.0) torchlightmap = max(torchlightmap, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(fragpos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
+	#if defined Hand_Held_lights && !defined LPV_ENABLED
+		#ifdef IS_IRIS
+			vec3 playerCamPos = eyePosition;
+		#else
+			vec3 playerCamPos = cameraPosition;
+		#endif
+
+		if(HELD_ITEM_BRIGHTNESS > 0.0) torchlightmap = max(torchlightmap, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(worldpos-playerCamPos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
 
 		#ifdef HAND
 			torchlightmap *= 0.9;
 		#endif
-
 	#endif
 	
-	float lightmap = clamp( (lmtexcoord.w-0.8) * 10.0,0.,1.);
+	float lightmap = clamp( (lmtexcoord.w-0.9) * 10.0,0.,1.);
 
-	float rainfall = rainStrength * noPuddleAreas;
-	float Puddle_shape = 0.;
+	float rainfall = 0.0;
+	float Puddle_shape = 0.0;
 	
 	#if defined Puddles && defined WORLD && !defined ENTITIES && !defined HAND
-		Puddle_shape = (1.0 - clamp(exp(-15 * pow(texture2D(noisetex, worldpos.xz * (0.020 * Puddle_Size)	).b  ,5)),0,1)) * lightmap		;
-		Puddle_shape *= clamp( viewToWorld(normal).y*0.5+0.5 ,0.0,1.0);
-		Puddle_shape *= rainfall;
+		rainfall = rainStrength * noPuddleAreas * lightmap;
+
+		Puddle_shape = clamp(lightmap - exp(-15.0 * pow(texture2D(noisetex, worldpos.xz * (0.020 * Puddle_Size)	).b,5.0)),0.0,1.0);
+		Puddle_shape *= clamp( viewToWorld(normal).y*0.5+0.5,0.0,1.0);
+		Puddle_shape *= rainStrength * noPuddleAreas ;
+
 	#endif
 
 	
@@ -348,14 +358,13 @@ void main() {
 	if(!ifPOM) maxdist = 0.0;
 
 	gl_FragDepth = gl_FragCoord.z;
-
 	if (dist < maxdist) {
 
 		float depthmap = readNormal(vtexcoord.st).a;
 		float used_POM_DEPTH = 1.0;
 
  		if ( viewVector.z < 0.0 && depthmap < 0.9999 && depthmap > 0.00001) {	
-			// float noise = blueNoise();
+			float noise = blueNoise();
 			#ifdef Adaptive_Step_length
 				vec3 interval = (viewVector.xyz /-viewVector.z/MAX_OCCLUSION_POINTS * POM_DEPTH) * clamp(1.0-pow(depthmap,2),0.1,1.0);
 				used_POM_DEPTH = 1.0;
@@ -364,9 +373,9 @@ void main() {
 			#endif
 			vec3 coord = vec3(vtexcoord.st , 1.0);
 
-			coord += interval  * used_POM_DEPTH;
+			coord += interval * noise * used_POM_DEPTH;
 
-			float sumVec = 0.5;
+			float sumVec = noise;
 			for (int loopCount = 0; (loopCount < MAX_OCCLUSION_POINTS) && (1.0 - POM_DEPTH + POM_DEPTH * readNormal(coord.st).a  ) < coord.p  && coord.p >= 0.0; ++loopCount) {
 				coord = coord + interval  * used_POM_DEPTH; 
 				sumVec += used_POM_DEPTH; 
@@ -395,7 +404,7 @@ void main() {
 	//////////////////////////////// 				//////////////////////////////// 
 	float textureLOD = bias();
 	vec4 Albedo = texture2D_POMSwitch(texture, adjustedTexCoord.xy, vec4(dcdx,dcdy), ifPOM, textureLOD) * color;
-
+	
 	#if defined HAND
 		if (Albedo.a < 0.1) discard;
 	#endif
@@ -415,9 +424,10 @@ void main() {
 	#ifdef AEROCHROME_MODE
 		float gray = dot(Albedo.rgb, vec3(0.2, 1.0, 0.07));
 		if (
-			blockID == BLOCK_AMETHYST_BUD_MEDIUM || blockID == BLOCK_AMETHYST_BUD_LARGE || blockID == BLOCK_AMETHYST_CLUSTER ||
-			blockID == BLOCK_SSS_STRONG || blockID == BLOCK_SSS_WEAK ||
-			blockID >= 10 && blockId < 80
+			blockID == BLOCK_AMETHYST_BUD_MEDIUM || blockID == BLOCK_AMETHYST_BUD_LARGE || blockID == BLOCK_AMETHYST_CLUSTER 
+			|| blockID == BLOCK_SSS_STRONG || blockID == BLOCK_SSS_WEAK
+			|| blockID == BLOCK_GLOW_LICHEN || blockID == BLOCK_SNOW_LAYERS
+			|| blockID >= 10 && blockID < 80
 		) {
 			// IR Reflective (Pink-red)
 			Albedo.rgb = mix(vec3(gray), aerochrome_color, 0.7);
@@ -428,7 +438,7 @@ void main() {
 			Albedo.rgb = mix(Albedo.rgb, aerochrome_color, strength);
 		}
 		#ifdef AEROCHROME_WOOL_ENABLED
-			else if(blockID == BLOCK_SSS_WEAK_2) {
+			else if (blockID == BLOCK_SSS_WEAK_2 || blockID == BLOCK_CARPET) {
 			// Wool
 				Albedo.rgb = mix(Albedo.rgb, aerochrome_color, 0.3);
 			}
@@ -448,12 +458,12 @@ void main() {
 	#ifdef HAND
 		if (Albedo.a > 0.1){
 			Albedo.a = 0.75;
+			gl_FragData[3] = vec4(0.0);
 		} else {
 			Albedo.a = 1.0;
 		}
 	#endif
-
-	#if defined HAND || defined ENTITIES || defined BLOCKENTITIES
+	#if defined PARTICLE_RENDERING_FIX && (defined ENTITIES || defined BLOCKENTITIES)
 		gl_FragData[3] = vec4(0.0);
 	#endif
 
@@ -474,16 +484,7 @@ void main() {
 		NormalTex.xy = NormalTex.xy * 2.0-1.0;
 		NormalTex.z = sqrt(max(1.0 - dot(NormalTex.xy, NormalTex.xy), 0.0));
 
-		// #if defined HEIGTHMAP_DEPTH_OFFSET && !defined HAND
-		// 	gl_FragDepth = gl_FragCoord.z;
-		// 	vec3 truePos = fragpos;
-		// 	truePos.z -= Heightmap * POM_DEPTH * (1.0 + ld(truePos.z));
-	
-		// 	gl_FragDepth = toClipSpace3(truePos).z;
-		// #endif
-		
-		normal = applyBump(tbnMatrix, NormalTex.xyz,  mix(1.0,1-Puddle_shape,rainfall)	);
-		// normal = applyBump(tbnMatrix, NormalTex.xyz,  0.0);
+		normal = applyBump(tbnMatrix, NormalTex.xyz,  1.0-Puddle_shape);
 	#endif
 	
 	//////////////////////////////// 				////////////////////////////////
@@ -493,10 +494,10 @@ void main() {
 	#ifdef WORLD
 		vec4 SpecularTex = texture2D_POMSwitch(specular, adjustedTexCoord.xy, vec4(dcdx,dcdy), ifPOM,textureLOD);
 
-		SpecularTex.r = max(SpecularTex.r, Puddle_shape);
-		SpecularTex.g = max(SpecularTex.g, Puddle_shape*0.02);
+		SpecularTex.r = max(SpecularTex.r, rainfall);
+		SpecularTex.g = max(SpecularTex.g, max(Puddle_shape*0.02,0.02));
 		
-		if ((blockID == 250 ||
+		if ((blockID == 266 ||
 		 blockID == BLOCK_REDSTONE_ORE_LIT ||
 		  blockID == BLOCK_DEEPSLATE_REDSTONE_ORE_LIT) && alphaTestRef < 0.05) {
 			float smax = max(max(Albedo.r,Albedo.g),Albedo.b);
@@ -546,13 +547,6 @@ void main() {
 		#if SSS_TYPE == 3		
 			gl_FragData[1].b = SpecularTex.b;
 		#endif
-		
-		// #ifndef ENTITIES
-		// 	if(PORTAL > 0){
-		// 		gl_FragData[2].rgb = vec3(0);
-		// 		gl_FragData[2].a = clamp(ENDPORTAL_EFFECT * 0.9, 0,0.9);
-		// 	}
-		// #endif
 	#endif
 
 	// hit glow effect...
@@ -565,12 +559,13 @@ void main() {
 	//////////////////////////////// 				////////////////////////////////
 
 	#ifdef WORLD
-
 		#ifdef Puddles
 			float porosity = 0.4;
+			
 			#ifdef Porosity
 				porosity = SpecularTex.z >= 64.5/255.0 ? 0.0 : (SpecularTex.z*255.0/64.0)*0.65;
 			#endif
+
 			if(SpecularTex.g < 229.5/255.0) Albedo.rgb = mix(Albedo.rgb, vec3(0), Puddle_shape*porosity);
 		#endif
 
@@ -578,9 +573,8 @@ void main() {
 		vec2 PackLightmaps = vec2(torchlightmap, lmtexcoord.w);
 		
 		vec4 data1 = clamp( encode(viewToWorld(normal), PackLightmaps), 0.0, 1.0);
-		// gl_FragData[0] = vec4(.0);
+		
 		gl_FragData[0] = vec4(encodeVec2(Albedo.x,data1.x),	encodeVec2(Albedo.y,data1.y),	encodeVec2(Albedo.z,data1.z),	encodeVec2(data1.w,Albedo.w));
-
 
 		gl_FragData[2] = vec4(FlatNormals * 0.5 + 0.5, VanillaAO);	
 	#endif

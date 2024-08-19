@@ -6,6 +6,10 @@ flat varying vec4 lightCol;
 flat varying vec3 averageSkyCol;
 flat varying vec3 averageSkyCol_Clouds;
 
+#if defined LPV_VL_FOG_ILLUMINATION && defined IS_LPV_ENABLED
+	flat varying float exposure;
+#endif
+
 #if defined Daily_Weather
 	flat varying vec4 dailyWeatherParams0;
 	flat varying vec4 dailyWeatherParams1;
@@ -16,7 +20,6 @@ flat varying vec3 averageSkyCol_Clouds;
 flat varying vec3 WsunVec;
 flat varying vec3 refractedSunVec;
 
-flat varying float tempOffsets;
 uniform vec2 texelSize;
 
 uniform sampler2D colortex4;
@@ -26,6 +29,10 @@ uniform vec3 sunPosition;
 uniform mat4 gbufferModelViewInverse;
 uniform int frameCounter;
 
+
+flat varying vec2 TAA_Offset;
+uniform int framemod8;
+#include "/lib/TAA_jitter.glsl"
 
 
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -41,26 +48,19 @@ uniform float frameTimeCounter;
 void main() {
 	gl_Position = ftransform();
 
-	// gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.51*2.0-1.0;
 	gl_Position.xy = (gl_Position.xy*0.5+0.5)*(0.01+VL_RENDER_RESOLUTION)*2.0-1.0;
 	
-  	#ifdef TAA
-	tempOffsets = HaltonSeq2(frameCounter%10000);
-	#else
-	tempOffsets = 0.0;
-	#endif
-
 	#ifdef OVERWORLD_SHADER
 		lightCol.rgb = texelFetch2D(colortex4,ivec2(6,37),0).rgb;
 		averageSkyCol = texelFetch2D(colortex4,ivec2(1,37),0).rgb;
 		averageSkyCol_Clouds = texelFetch2D(colortex4,ivec2(0,37),0).rgb;
 	
 		#if defined Daily_Weather
-			dailyWeatherParams0 = vec4(texelFetch2D(colortex4,ivec2(1,1),0).rgb/150.0, 0.0);
-			dailyWeatherParams1 = vec4(texelFetch2D(colortex4,ivec2(2,1),0).rgb/150.0, 0.0);
+			dailyWeatherParams0 = vec4((texelFetch2D(colortex4,ivec2(1,1),0).rgb/150.0)/2.0, 0.0);
+			dailyWeatherParams1 = vec4((texelFetch2D(colortex4,ivec2(2,1),0).rgb/150.0)/2.0, 0.0);
 			
-			dailyWeatherParams0.a = texelFetch2D(colortex4,ivec2(3,1),0).x/150.0;
-			dailyWeatherParams1.a = texelFetch2D(colortex4,ivec2(3,1),0).y/150.0;
+			dailyWeatherParams0.a = (texelFetch2D(colortex4,ivec2(3,1),0).x/150.0)/2.0;
+			dailyWeatherParams1.a = (texelFetch2D(colortex4,ivec2(3,1),0).y/150.0)/2.0;
 		#endif
 	
 	#endif
@@ -80,6 +80,16 @@ void main() {
 	lightCol.a = float(sunElevation > 1e-5)*2.0 - 1.0;
 	WsunVec = lightCol.a * normalize(mat3(gbufferModelViewInverse) * sunPosition);
 
-
 	refractedSunVec = refract(WsunVec, -vec3(0.0,1.0,0.0), 1.0/1.33333);
+
+	#if defined LPV_VL_FOG_ILLUMINATION && defined IS_LPV_ENABLED
+		exposure = texelFetch2D(colortex4,ivec2(10,37),0).r;
+	#endif
+
+	#ifdef TAA
+		TAA_Offset = offsets[framemod8];
+	#else
+		TAA_Offset = vec2(0.0);
+	#endif
+
 }

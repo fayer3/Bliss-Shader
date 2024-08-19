@@ -143,14 +143,8 @@ float GGX(vec3 n, vec3 v, vec3 l, float r, float f0) {
 
 uniform int framemod8;
 
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/TAA_jitter.glsl"
+
 
 
 // float DH_ld(float dist) {
@@ -168,7 +162,7 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 
 vec3 rayTrace(vec3 dir, vec3 position,float dither, float fresnel, bool inwater){
 
-    float quality = mix(15,SSR_STEPS,fresnel);
+    float quality = mix(5,SSR_STEPS,fresnel);
     vec3 clipPosition = DH_toClipSpace3(position);
 	float rayLength = ((position.z + dir.z * dhFarPlane*sqrt(3.)) > -dhNearPlane) ?
        (-dhNearPlane - position.z) / dir.z : dhFarPlane*sqrt(3.);
@@ -252,7 +246,6 @@ vec3 applyBump(mat3 tbnMatrix, vec3 bump, float puddle_values){
 	return normalize(bump*tbnMatrix);
 }
 
-varying vec4 tangent;
 
 /* RENDERTARGETS:2,7 */
 void main() {
@@ -269,11 +262,16 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
     float transition = exp(-25* pow(clamp(1.0 - length(playerPos)/(far-8),0.0,1.0),2));
 
     #ifdef DH_OVERDRAW_PREVENTION
-        if(length(playerPos) < max(far-16*4,16) ){ discard; return;}
+		#if OVERDRAW_MAX_DISTANCE == 0
+			float maxOverdrawDistance = far;
+		#else
+			float maxOverdrawDistance = OVERDRAW_MAX_DISTANCE;
+		#endif
+
+        if(length(playerPos) < clamp(far-16*4, 16, maxOverdrawDistance) ){ discard; return;}
     #endif
 
-
-    if(iswater){
+    if(iswater && abs(normals.y) > 0.0){
 	    vec3 posxz = playerPos+cameraPosition;
 
 		vec3 bump = normalize(getWaveNormal(posxz, true));
@@ -388,7 +386,7 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
         #ifdef SNELLS_WINDOW
 	    	if(isEyeInWater == 1) fresnel = pow(clamp(1.5 + normalDotEye,0.0,1.0), 25.0);
 	    #endif
-        #ifdef SCREENSPACE_REFLECTIONS
+        #if defined SCREENSPACE_REFLECTIONS && defined DH_SCREENSPACE_REFLECTIONS
             vec3 rtPos = rayTrace(reflectedVector, viewPos, interleaved_gradientNoise(), fresnel, false);
             if (rtPos.z < 1.){
             	vec3 previousPosition = mat3(gbufferModelViewInverse) * DH_toScreenSpace(rtPos) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
@@ -401,7 +399,7 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
             }
         #endif
 		#ifdef WATER_BACKGROUND_SPECULAR
-            BackgroundReflection = skyCloudsFromTex(mat3(gbufferModelViewInverse) * reflectedVector, colortex4).rgb / 30.0;
+            BackgroundReflection = skyCloudsFromTex(mat3(gbufferModelViewInverse) * reflectedVector, colortex4).rgb / 30.0; 
         #endif
         #ifdef WATER_SUN_SPECULAR
             SunReflection = Direct_lighting * GGX(normalize(normals), -normalize(viewPos), normalize(WsunVec2), roughness, f0) * (1.0-Reflections.a);
@@ -424,7 +422,7 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 	#endif
     
     #ifdef DH_OVERDRAW_PREVENTION
-        float distancefade = min(max(1.0 - length(playerPos)/max(far-16*4,16),0.0)*5,1.0);
+        float distancefade = min(max(1.0 - length(playerPos)/clamp(far-16*4, 16, maxOverdrawDistance),0.0)*5,1.0);
 
         if(texture2D(depthtex0, gl_FragCoord.xy*texelSize).x < 1.0 ||  distancefade > 0.0){
             gl_FragData[0].a = 0.0;

@@ -1,8 +1,10 @@
 #version 120
-#extension GL_ARB_explicit_attrib_location: enable
-#extension GL_ARB_shader_image_load_store: enable
-
 #include "/lib/settings.glsl"
+#ifdef IS_LPV_ENABLED
+	#extension GL_ARB_explicit_attrib_location: enable
+	#extension GL_ARB_shader_image_load_store: enable
+	#extension GL_ARB_shading_language_packing : enable
+#endif
 
 #define RENDER_SHADOW
 
@@ -16,8 +18,16 @@ Read the terms of modification and sharing before changing something below pleas
 
 #ifdef IS_LPV_ENABLED
 	attribute vec4 mc_Entity;
-	attribute vec3 at_midBlock;
+	#ifdef IRIS_FEATURE_BLOCK_EMISSION_ATTRIBUTE
+		attribute vec4 at_midBlock;
+	#else
+		attribute vec3 at_midBlock;
+	#endif
 	attribute vec3 vaPosition;
+
+	#ifdef LPV_ENTITY_LIGHTS
+		uniform usampler1D texBlockData;
+	#endif
 
 	uniform mat4 shadowModelViewInverse;
 	
@@ -44,47 +54,7 @@ void main() {
 			vec3 playerpos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
 		#endif
 
-		if (
-			renderStage == MC_RENDER_STAGE_TERRAIN_SOLID || renderStage == MC_RENDER_STAGE_TERRAIN_TRANSLUCENT ||
-			renderStage == MC_RENDER_STAGE_TERRAIN_CUTOUT || renderStage == MC_RENDER_STAGE_TERRAIN_CUTOUT_MIPPED
-		) {
-			vec3 originPos = playerpos + at_midBlock/64.0;
-
-			uint voxelId = uint(mc_Entity.x + 0.5);
-			if (voxelId == 0u) voxelId = 1u;
-
-			SetVoxelBlock(originPos, voxelId);
-		}
-		
-		#ifdef LPV_ENTITY_LIGHTS
-			if (
-				(currentRenderedItemId > 0 || entityId > 0) &&
-				(renderStage == MC_RENDER_STAGE_BLOCK_ENTITIES || renderStage == MC_RENDER_STAGE_ENTITIES)
-			) {
-				uint voxelId = 0u;
-
-				if (currentRenderedItemId > 0) {
-					if (entityId != ENTITY_ITEM_FRAME && entityId != ENTITY_PLAYER)
-						voxelId = uint(currentRenderedItemId);
-				}
-				else {
-					switch (entityId) {
-						case ENTITY_BLAZE:
-						case ENTITY_END_CRYSTAL:
-						// case ENTITY_FIREBALL_SMALL:
-						case ENTITY_GLOW_SQUID:
-						case ENTITY_MAGMA_CUBE:
-						case ENTITY_SPECTRAL_ARROW:
-						case ENTITY_TNT:
-							voxelId = uint(entityId);
-							break;
-					}
-				}
-
-				if (voxelId > 0u)
-					SetVoxelBlock(playerpos, voxelId);
-			}
-		#endif
+		PopulateShadowVoxel(playerpos);
 	#endif
 
 	gl_Position = vec4(-1.0);

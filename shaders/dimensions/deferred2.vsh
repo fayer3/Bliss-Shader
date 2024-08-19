@@ -1,5 +1,6 @@
 #include "/lib/settings.glsl"
 
+// uniform int dhRenderDistance;
 #if defined Daily_Weather
 	flat varying vec4 dailyWeatherParams0;
 	flat varying vec4 dailyWeatherParams1;
@@ -31,8 +32,8 @@ void main() {
 	gl_Position.xy = (gl_Position.xy*0.5+0.5)*clamp(CLOUDS_QUALITY+0.01,0.0,1.0)*2.0-1.0;
 
 	#if defined Daily_Weather
-		dailyWeatherParams0 = vec4(texelFetch2D(colortex4,ivec2(1,1),0).rgb/150.0, 0.0);
-		dailyWeatherParams1 = vec4(texelFetch2D(colortex4,ivec2(2,1),0).rgb/150.0, 0.0);
+		dailyWeatherParams0 = vec4((texelFetch2D(colortex4,ivec2(1,1),0).rgb/150.0)/2.0, 0.0);
+		dailyWeatherParams1 = vec4((texelFetch2D(colortex4,ivec2(2,1),0).rgb/150.0)/2.0, 0.0);
 	#endif
 
 	averageSkyCol = texelFetch2D(colortex4,ivec2(1,37),0).rgb;
@@ -43,7 +44,7 @@ void main() {
 	// moonColor = texelFetch2D(colortex4,ivec2(9,37),0).rgb;
 	
 
-	WsunVec = normalize(mat3(gbufferModelViewInverse) * sunPosition) * (float(sunElevation > 1e-5)*2.0-1.0);
+	WsunVec = normalize(mat3(gbufferModelViewInverse) * sunPosition);// * (float(sunElevation > 1e-5)*2.0-1.0);
 	// WsunVec = normalize(LightDir);
 
 	tempOffsets = HaltonSeq2(frameCounter%10000);

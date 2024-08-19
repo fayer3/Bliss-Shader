@@ -1,5 +1,9 @@
 #include "/lib/settings.glsl"
 
+#ifndef DH_AMBIENT_OCCLUSION
+	#undef DISTANT_HORIZONS
+#endif
+
 
 flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
@@ -436,7 +440,7 @@ void main() {
 		vec3 FlatNormals = texture2D(colortex15,texcoord).rgb * 2.0 - 1.0;
 		
 		if(z >= 1.0){
-			FlatNormals = worldToView(normal);
+			FlatNormals = normal;
 		}
 
 		vec2 SSAO_SSS = SSAO(viewPos, FlatNormals, hand, isLeaf, noise);

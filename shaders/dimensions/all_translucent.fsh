@@ -66,6 +66,9 @@ varying vec4 tangent;
 varying vec4 normalMat;
 varying vec3 binormal;
 varying vec3 flatnormal;
+#ifdef LARGE_WAVE_DISPLACEMENT
+varying vec3 shitnormal;
+#endif
 
 
 flat varying float exposure;
@@ -149,14 +152,8 @@ float R2_dither(){
 	return fract(alpha.x * coord.x + alpha.y * coord.y ) ;
 }
 
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/TAA_jitter.glsl"
+
 
 
 
@@ -214,7 +211,7 @@ vec3 viewToWorld(vec3 viewPos) {
     vec4 pos;
     pos.xyz = viewPos;
     pos.w = 0.0;
-    pos = gbufferModelViewInverse * pos;
+    pos = gbufferModelViewInverse * pos ;
     return pos.xyz;
 }
 
@@ -433,65 +430,8 @@ void Emission(
 	if( Emission < 254.5/255.0) Lighting = mix(Lighting, Albedo * Emissive_Brightness * autoBrightnessAdjust * 0.1, pow(Emission, Emissive_Curve)); // old method.... idk why
 }
 
-/*
-uniform float viewWidth;
-uniform float viewHeight;
-void frisvad(in vec3 n, out vec3 f, out vec3 r){
-    if(n.z < -0.9) {
-        f = vec3(0.,-1,0);
-        r = vec3(-1, 0, 0);
-    } else {
-    	float a = 1./(1.+n.z);
-    	float b = -n.x*n.y*a;
-    	f = vec3(1. - n.x*n.x*a, b, -n.x) ;
-    	r = vec3(b, 1. - n.y*n.y*a , -n.y);
-    }
-}
-mat3 CoordBase(vec3 n){
-	vec3 x,y;
-    frisvad(n,x,y);
-    return mat3(x,y,n);
-}
-vec2 R2_samples(int n){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha * n);
-}
-float fma(float a,float b,float c){
- return a * b + c;
-}
-//// thank you Zombye | the paper: https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
-vec3 SampleVNDFGGX(
-    vec3 viewerDirection, // Direction pointing towards the viewer, oriented such that +Z corresponds to the surface normal
-    vec2 alpha, // Roughness parameter along X and Y of the distribution
-    float xy // Pair of uniformly distributed numbers in [0, 1)
-) {
-	// alpha *= alpha;
-    // Transform viewer direction to the hemisphere configuration
-    viewerDirection = normalize(vec3(alpha * viewerDirection.xy, viewerDirection.z));
+uniform vec3 eyePosition;
 
-    // Sample a reflection direction off the hemisphere
-    const float tau = 6.2831853; // 2 * pi
-    float phi = tau * xy;
-
-    float cosTheta = fma(1.0 - xy, 1.0 + viewerDirection.z, -viewerDirection.z) ;
-    float sinTheta = sqrt(clamp(1.0 - cosTheta * cosTheta, 0.0, 1.0));
-
-	// xonk note, i dont know what im doing but this kinda does what i want so whatever
-	float attemptTailClamp  = clamp(sinTheta,max(cosTheta-0.25,0), cosTheta);
-	float attemptTailClamp2 = clamp(cosTheta,max(sinTheta-0.25,0), sinTheta);
-
-    vec3 reflected = vec3(vec2(cos(phi), sin(phi)) * attemptTailClamp2, attemptTailClamp);
-    // vec3 reflected = vec3(vec2(cos(phi), sin(phi)) * sinTheta, cosTheta);
-
-    // Evaluate halfway direction
-    // This gives the normal on the hemisphere
-    vec3 halfway = reflected + viewerDirection;
-
-    // Transform the halfway direction back to hemiellispoid configuation
-    // This gives the final sampled normal
-    return normalize(vec3(alpha * halfway.xy, halfway.z));
-}
-*/
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -580,9 +520,20 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 ////////////////////////////////////////////////////////////////////////////////
 
 	vec3 normal = normalMat.xyz; // in viewSpace
+
+	#ifdef LARGE_WAVE_DISPLACEMENT
+		if (isWater){
+			normal = viewToWorld(normal) ;
+			normal.xz = shitnormal.xy;
+			normal = worldToView(normal);
+		}
+	#endif
+	
 	vec3 worldSpaceNormal = viewToWorld(normal).xyz;
 	vec2 TangentNormal = vec2(0); // for refractions
 	
+
+
 	vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
 	mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
 						  tangent.y, tangent2.y, normal.y,
@@ -637,8 +588,13 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 		lightmap.y = 1.0;
 	#endif
 	
-	#ifdef Hand_Held_lights
-		lightmap.x = max(lightmap.x, HELD_ITEM_BRIGHTNESS*clamp( pow(max(1.0-length(viewPos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
+	#if defined Hand_Held_lights && !defined LPV_ENABLED
+		#ifdef IS_IRIS
+			vec3 playerCamPos = eyePosition;
+		#else
+			vec3 playerCamPos = cameraPosition;
+		#endif
+		lightmap.x = max(lightmap.x, HELD_ITEM_BRIGHTNESS*clamp( pow(max(1.0-length((feetPlayerPos+cameraPosition) - playerCamPos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
 	#endif
 
 	vec3 Indirect_lighting = vec3(0.0);
@@ -674,19 +630,12 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 		
 		float skylight = max(pow(viewToWorld(flatnormal).y*0.5+0.5,0.1) + SkylightDir, 0.2);
 		AmbientLightColor *= skylight;
+		
+		Indirect_lighting = doIndirectLighting(AmbientLightColor, MinimumLightColor, lightmap.y);
 	#endif
 
 	#ifdef NETHER_SHADER
-		// vec3 AmbientLightColor = skyCloudsFromTexLOD2(worldSpaceNormal, colortex4, 6).rgb / 15.0;
-		
-		// vec3 up 	= skyCloudsFromTexLOD2(vec3( 0, 1, 0), colortex4, 6).rgb/ 30.0;
-		// vec3 down 	= skyCloudsFromTexLOD2(vec3( 0,-1, 0), colortex4, 6).rgb/ 30.0;
-
-		// up   *= pow( max( worldSpaceNormal.y, 0), 2);
-		// down *= pow( max(-worldSpaceNormal.y, 0), 2);
-		// AmbientLightColor += up + down;
-		
-		vec3 AmbientLightColor = vec3(0.1);
+		Indirect_lighting = skyCloudsFromTexLOD2(worldSpaceNormal, colortex4, 6).rgb / 30.0 ;
 	#endif
 
 	#ifdef END_SHADER
@@ -703,12 +652,17 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 
 		Direct_lighting = lightColors * endFogPhase(lightPos) * NdotL;
 
-		vec3 AmbientLightColor = vec3(0.5,0.75,1.0) * 0.9 + 0.1;
-		AmbientLightColor *= clamp(1.5 + dot(worldSpaceNormal, normalize(feetPlayerPos))*0.5,0,2);
+		vec3 AmbientLightColor = vec3(0.3,0.6,1.0) * 0.5;
+			
+		Indirect_lighting = AmbientLightColor + 0.7 * AmbientLightColor * dot(worldSpaceNormal, normalize(feetPlayerPos));
 	#endif
 
+	///////////////////////// BLOCKLIGHT LIGHTING OR LPV LIGHTING OR FLOODFILL COLORED LIGHTING
 	#ifdef IS_LPV_ENABLED
-		vec3 normalOffset = 0.5*worldSpaceNormal;
+		vec3 normalOffset = vec3(0.0);
+
+		if (any(greaterThan(abs(worldSpaceNormal), vec3(1.0e-6))))
+			normalOffset = 0.5*worldSpaceNormal;
 
 		#if LPV_NORMAL_STRENGTH > 0
 			if (any(greaterThan(abs(normal), vec3(1.0e-6)))) {
@@ -722,7 +676,7 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 		const vec3 lpvPos = vec3(0.0);
 	#endif
 
-	Indirect_lighting = DoAmbientLightColor(feetPlayerPos, lpvPos, AmbientLightColor, MinimumLightColor, vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.xy, exposure);
+	Indirect_lighting += doBlockLightLighting( vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, exposure, feetPlayerPos, lpvPos);
 	
 	vec3 FinalColor = (Indirect_lighting + Direct_lighting) * Albedo;
 

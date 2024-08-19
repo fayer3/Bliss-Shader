@@ -21,14 +21,8 @@ uniform float far;
 #include "/lib/bokeh.glsl"
 #endif
 
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/TAA_jitter.glsl"
+
 
 
 /*
@@ -80,8 +74,10 @@ void main() {
 	if(dhMaterialId == DH_BLOCK_ILLUMINATED || gl_MultiTexCoord1.x >= 0.95) EMISSIVE = 0.5;
 
 	SSSAMOUNT = 0.0;
-	if (dhMaterialId == DH_BLOCK_LEAVES) SSSAMOUNT = 1.0;
-	if (dhMaterialId == DH_BLOCK_SNOW) SSSAMOUNT = 0.5;
+	#if defined DH_SUBSURFACE_SCATTERING
+		if (dhMaterialId == DH_BLOCK_LEAVES) SSSAMOUNT = 1.0;
+		if (dhMaterialId == DH_BLOCK_SNOW) SSSAMOUNT = 0.5;
+	#endif
 
 	// a mask for DH terrain in general.
 	float MATERIALS = 0.65;

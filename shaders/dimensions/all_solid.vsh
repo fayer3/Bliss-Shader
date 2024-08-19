@@ -72,6 +72,7 @@ uniform float viewHeight;
 uniform float viewWidth;
 uniform int hideGUI;
 uniform float screenBrightness;
+uniform int isEyeInWater;
 
 flat varying float SSSAMOUNT;
 flat varying float EMISSIVE;
@@ -90,14 +91,9 @@ uniform vec3 cameraPosition;
 uniform vec2 texelSize;
 uniform int framemod8;
 
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/TAA_jitter.glsl"
+
+
 							
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
@@ -178,7 +174,13 @@ float densityAtPos(in vec3 pos){
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
-
+vec3 viewToWorld(vec3 viewPos) {
+    vec4 pos;
+    pos.xyz = viewPos;
+    pos.w = 0.0;
+    pos = gbufferModelViewInverse * pos;
+    return pos.xyz;
+}
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -222,10 +224,9 @@ void main() {
 	normalMat = vec4(normalize(gl_NormalMatrix * gl_Normal), 1.0);
 	FlatNormals = normalMat.xyz;
 
-	blockID = mc_Entity.x;
-	// velocity = at_velocity;
+	blockID = mc_Entity.x ;
 
-	if(mc_Entity.x == BLOCK_GROUND_WAVING_VERTICAL || mc_Entity.x == BLOCK_GRASS_SHORT) normalMat.a = 0.60;
+	if(blockID == BLOCK_GROUND_WAVING_VERTICAL || blockID == BLOCK_GRASS_SHORT || blockID == BLOCK_GRASS_TALL_LOWER || blockID == BLOCK_GRASS_TALL_UPPER ) normalMat.a = 0.60;
 
 
 	PORTAL = 0;
@@ -238,7 +239,6 @@ void main() {
 	#endif
 	
 	NameTags = 0;
-	
 
 #ifdef ENTITIES
 	// disallow POM to work on item frames.
@@ -260,6 +260,11 @@ void main() {
 		LIGHTNING = 0;
 	// if(NameTags > 0) EMISSIVE = 0.9;
 
+	HELD_ITEM_BRIGHTNESS = 0.0;
+	#ifdef Hand_Held_lights
+		if(heldItemId > 999 || heldItemId2 > 999 ) HELD_ITEM_BRIGHTNESS = 0.9;
+	#endif
+
 	// normal block lightsources		
 	if(mc_Entity.x >= 100 && mc_Entity.x < 300) EMISSIVE = 0.5;
 	
@@ -273,13 +278,6 @@ void main() {
 
     /////// ----- SSS STUFF ----- ///////
 		SSSAMOUNT = 0.0;
-
-	HELD_ITEM_BRIGHTNESS = 0.0;
-
-	#ifdef Hand_Held_lights
-if(heldItemId == ITEM_LIGHT_SOURCES || heldItemId2 == ITEM_LIGHT_SOURCES) HELD_ITEM_BRIGHTNESS = 0.9;
-	#endif
-
 
 #ifdef WORLD
     /////// ----- SSS ON BLOCKS ----- ///////
@@ -295,6 +293,7 @@ if(heldItemId == ITEM_LIGHT_SOURCES || heldItemId2 == ITEM_LIGHT_SOURCES) HELD_I
 	// medium
 	if (
 		mc_Entity.x == BLOCK_SSS_WEAK || mc_Entity.x == BLOCK_SSS_WEAK_2 ||
+		mc_Entity.x == BLOCK_GLOW_LICHEN || mc_Entity.x == BLOCK_SNOW_LAYERS || mc_Entity.x == BLOCK_CARPET ||
 		mc_Entity.x == BLOCK_AMETHYST_BUD_MEDIUM || mc_Entity.x == BLOCK_AMETHYST_BUD_LARGE || mc_Entity.x == BLOCK_AMETHYST_CLUSTER ||
 		mc_Entity.x == BLOCK_BAMBOO || mc_Entity.x == BLOCK_SAPLING || mc_Entity.x == BLOCK_VINE
 	) {
@@ -331,26 +330,35 @@ if(heldItemId == ITEM_LIGHT_SOURCES || heldItemId2 == ITEM_LIGHT_SOURCES) HELD_I
 
 
 	#ifdef WAVY_PLANTS
-		bool istopv = gl_MultiTexCoord0.t < mc_midTexCoord.t;
+		// also use normal, so up/down facing geometry does not get detatched from its model parts.
+		bool InterpolateFromBase = gl_MultiTexCoord0.t < max(mc_midTexCoord.t, abs(viewToWorld(FlatNormals).y));
 
-		if (
+		if(	
 			(
-				mc_Entity.x == BLOCK_GROUND_WAVING || mc_Entity.x == BLOCK_GROUND_WAVING_VERTICAL ||
-				mc_Entity.x == BLOCK_GRASS_SHORT || mc_Entity.x == BLOCK_GRASS_TALL_UPPER ||
-				mc_Entity.x == BLOCK_SAPLING
-			) && istopv && abs(position.z) < 64.0
-		) {
-			vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz + cameraPosition;
-			worldpos.xyz += calcMovePlants(worldpos.xyz)*lmtexcoord.w - cameraPosition;
-    		position = mat3(gbufferModelView) * worldpos + gbufferModelView[3].xyz;
-		}
+				// these wave off of the ground. the area connected to the ground does not wave.
+				(InterpolateFromBase && (mc_Entity.x == BLOCK_GRASS_TALL_LOWER || mc_Entity.x == BLOCK_GROUND_WAVING || mc_Entity.x == BLOCK_GRASS_SHORT || mc_Entity.x == BLOCK_SAPLING || mc_Entity.x == BLOCK_GROUND_WAVING_VERTICAL)) 
+
+				// these wave off of the ceiling. the area connected to the ceiling does not wave.
+				|| (!InterpolateFromBase && (mc_Entity.x == 17))
+
+				// these wave off of the air. they wave uniformly
+				|| (mc_Entity.x == BLOCK_GRASS_TALL_UPPER || mc_Entity.x == BLOCK_AIR_WAVING)
+
+			) && abs(position.z) < 64.0
+		){
+   			vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
+			vec3 UnalteredWorldpos = worldpos;
+
+			// apply displacement for waving plant blocks
+			worldpos += calcMovePlants(worldpos + cameraPosition) * max(lmtexcoord.w,0.5);
+
+			// apply displacement for waving leaf blocks specifically, overwriting the other waving mode. these wave off of the air. they wave uniformly
+			if(mc_Entity.x == BLOCK_AIR_WAVING) worldpos = UnalteredWorldpos + calcMoveLeaves(worldpos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*lmtexcoord.w;
 		
-		if (mc_Entity.x == BLOCK_AIR_WAVING && abs(position.z) < 64.0) {
-   			vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz + cameraPosition;
-			worldpos.xyz += calcMoveLeaves(worldpos.xyz, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*lmtexcoord.w  - cameraPosition;
-   			position = mat3(gbufferModelView) * worldpos + gbufferModelView[3].xyz;
+			position = mat3(gbufferModelView) * worldpos + gbufferModelView[3].xyz;
 		}
 	#endif
+
 	gl_Position = toClipSpace3(position);
 #endif
 

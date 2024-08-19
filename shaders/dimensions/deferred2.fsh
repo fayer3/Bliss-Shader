@@ -23,6 +23,7 @@ uniform sampler2D noisetex;
 uniform sampler2D colortex12;
 
 flat varying vec3 WsunVec;
+uniform float sunElevation;
 uniform vec3 sunVec;
 uniform vec2 texelSize;
 uniform float frameTimeCounter;
@@ -70,14 +71,8 @@ float interleaved_gradientNoise(){
 
 
 
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/TAA_jitter.glsl"
+
 float blueNoise(){
   #ifdef TAA
   	return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
@@ -103,8 +98,8 @@ uniform int dhRenderDistance;
 #include "/lib/sky_gradient.glsl"
 #include "/lib/res_params.glsl"
 
-// #define CLOUDS_INTERSECT_TERRAIN
-
+#define CLOUDS_INTERSECT_TERRAIN
+uniform float eyeAltitude;
 #include "/lib/volumetricClouds.glsl"
 
 
@@ -122,23 +117,29 @@ uniform int dhRenderDistance;
 
 void main() {
 /* DRAWBUFFERS:0 */
-	#if defined OVERWORLD_SHADER && defined VOLUMETRIC_CLOUDS 
-		vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY*RENDER_SCALE*0.5);
-		
-		float depth =  texture2D(depthtex0, halfResTC*texelSize).x;
-		
 
-		// vec3 viewPos = toScreenSpace(vec3(halfResTC*texelSize, depth));
+
+
+	#if defined OVERWORLD_SHADER && defined VOLUMETRIC_CLOUDS && !defined  CLOUDS_INTERSECT_TERRAIN
+		vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY*RENDER_SCALE*0.5);
+
+		vec2 halfResTC2 = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY+0.5+offsets[framemod8]*CLOUDS_QUALITY*0.5);
 		
-		#ifdef DISTANT_HORIZONS
-		float DH_depth =  texture2D(dhDepthTex, halfResTC*texelSize).x;
-			vec3 viewPos = toScreenSpace_DH(halfResTC*texelSize, depth, DH_depth);
+		#ifdef CLOUDS_INTERSECT_TERRAIN
+			float depth = texture2D(depthtex0, halfResTC2*texelSize).x;
+
+			#ifdef DISTANT_HORIZONS
+				float DH_depth =  texture2D(dhDepthTex, halfResTC2*texelSize).x;
+				vec3 viewPos = toScreenSpace_DH(halfResTC*texelSize, depth, DH_depth);
+			#else
+				vec3 viewPos = toScreenSpace(vec3(halfResTC*texelSize, depth));
+			#endif
 		#else
-			vec3 viewPos = toScreenSpace(vec3(halfResTC*texelSize, depth));
+			vec3 viewPos = toScreenSpace(vec3(halfResTC*texelSize, 1.0));
 		#endif
 
-
-		vec4 VolumetricClouds = renderClouds(viewPos, vec2(R2_dither(), blueNoise()), sunColor/80.0, averageSkyCol/30.0);
+		vec3 tesvar = vec3(0.0);
+		vec4 VolumetricClouds = renderClouds(viewPos, vec2(R2_dither(), blueNoise()), sunColor/80.0, averageSkyCol/30.0,tesvar);
 
 		gl_FragData[0] = VolumetricClouds;
 	#else

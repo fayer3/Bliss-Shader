@@ -101,20 +101,26 @@ uniform vec3 cameraPosition;
 void main() {
     
     #ifdef DH_OVERDRAW_PREVENTION
-        if(clamp(1.0-length(pos.xyz)/max(far - 32.0,32.0),0.0,1.0) > 0.0 ){
+    	#if OVERDRAW_MAX_DISTANCE == 0
+			float maxOverdrawDistance = far;
+		#else
+			float maxOverdrawDistance = OVERDRAW_MAX_DISTANCE;
+		#endif
+
+        if(clamp(1.0-length(pos.xyz)/clamp(far - 32.0,32.0,maxOverdrawDistance),0.0,1.0) > 0.0 ){
             discard;
             return;
         }
     #endif
 
-    vec3 normals = viewToWorld(normals_and_materials.xyz);
+    vec3 normals = (normals_and_materials.xyz);
     float materials = normals_and_materials.a;
 	vec2 PackLightmaps = lightmapCoords;
 
-    PackLightmaps.y *= 1.05;
-    PackLightmaps = min(max(PackLightmaps  - 0.001*blueNoise(),0.0)*1.002,1.0);
+    // PackLightmaps.y *= 1.05;
+    PackLightmaps = min(max(PackLightmaps,0.0)*1.05,1.0);
     
-    vec4 data1 = clamp( encode(normals.xyz, PackLightmaps), 0.0, 1.0);
+    vec4 data1 = clamp( encode(normals, PackLightmaps), 0.0, 1.0);
     
     // alpha is material masks, set it to 0.65 to make a DH LODs mask. 
     vec4 Albedo = vec4(gcolor.rgb, 1.0);

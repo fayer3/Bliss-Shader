@@ -44,6 +44,7 @@ uniform vec3 sunPosition;
 uniform vec3 cameraPosition;
 // uniform float far;
 uniform ivec2 eyeBrightnessSmooth;
+uniform float caveDetection;
 
 
 vec4 lightCol = vec4(lightSourceColor, float(sunElevation > 1e-5)*2-1.);
@@ -83,6 +84,7 @@ vec3 toScreenSpace(vec3 p) {
     return viewPos.xyz / viewPos.w;
 }
 
+uniform float near;
 uniform float dhFarPlane;
 uniform float dhNearPlane;
 
@@ -116,7 +118,9 @@ float DH_inv_ld (float lindepth){
 float linearizeDepthFast(const in float depth, const in float near, const in float far) {
     return (near * far) / (depth * (near - far) + far);
 }
-
+float invLinZ (float lindepth){
+	return -((2.0*near/lindepth)-far-near)/(far-near);
+}
 #ifdef OVERWORLD_SHADER
 
 	// uniform sampler2D colortex12;
@@ -147,6 +151,7 @@ float linearizeDepthFast(const in float depth, const in float near, const in flo
 	uniform sampler2D colortex4;
 	#include "/lib/end_fog.glsl"
 #endif
+
 vec3 rodSample(vec2 Xi)
 {
 	float r = sqrt(1.0f - Xi.x*Xi.y);
@@ -190,18 +195,14 @@ if (gl_FragCoord.x > pixelPos6.x && gl_FragCoord.x < pixelPos6.x + 1 && gl_FragC
 		ivec2 pixelPos = ivec2(0,0);
 		if (gl_FragCoord.x > 1 && gl_FragCoord.x < 4 && gl_FragCoord.y > 1 && gl_FragCoord.y < 2){
 			
-			mixhistory = 0.01;
+			mixhistory = 0.005;
 			
-			if(gl_FragCoord.x < 2) gl_FragData[0] = vec4(dailyWeatherParams0.rgb,1.0);
-			if(gl_FragCoord.x > 2) gl_FragData[0] = vec4(dailyWeatherParams1.rgb,1.0);
-			if(gl_FragCoord.x > 3) gl_FragData[0] = vec4(dailyWeatherParams0.a, dailyWeatherParams1.a, 0.0, 1.0);
+			if(gl_FragCoord.x < 2) gl_FragData[0] = vec4(dailyWeatherParams0.rgb * 2.0,1.0);
+			if(gl_FragCoord.x > 2) gl_FragData[0] = vec4(dailyWeatherParams1.rgb * 2.0,1.0);
+			if(gl_FragCoord.x > 3) gl_FragData[0] = vec4(dailyWeatherParams0.a * 2.0, dailyWeatherParams1.a * 2.0, 0.0, 1.0);
 	
 		}
 	#endif
-
-
-
-
 
 	///////////////////////////////
 	/// --- STORE COLOR LUT --- ///
@@ -211,7 +212,6 @@ if (gl_FragCoord.x > pixelPos6.x && gl_FragCoord.x < pixelPos6.x + 1 && gl_FragC
 
 	// --- the color of the atmosphere + the average color of the atmosphere.
 	vec3 skyGroundCol = skyFromTex(vec3(0, -1 ,0), colortex4).rgb;// * clamp(WsunVec.y*2.0,0.2,1.0);
-
 
 
 	/// --- Save light values
@@ -248,19 +248,16 @@ if (gl_FragCoord.x > pixelPos6.x && gl_FragCoord.x < pixelPos6.x + 1 && gl_FragC
 
 /// --- Sky only
 if (gl_FragCoord.x > 18. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257){
-	
-
 	vec2 p = clamp(floor(gl_FragCoord.xy-vec2(18.,1.))/256.+tempOffsets/256.,0.0,1.0);
 	vec3 viewVector = cartToSphere(p);
 
 	vec2 planetSphere = vec2(0.0);
 	vec3 sky = vec3(0.0);
 	vec3 skyAbsorb = vec3(0.0);
-
-	// float GroundDarkening = (exp2(-15 * clamp(-viewVector.y,0.0,1.0)) * 0.7+0.3); // darken the ground in the sky.
-	sky = calculateAtmosphere((averageSkyCol*4000./2.0) , viewVector, vec3(0.0,1.0,0.0), WsunVec, -WsunVec, planetSphere, skyAbsorb, 10, blueNoise());
-
-	// sky = mix(sky, (averageSkyCol + skyAbsorb)*4000./2.0, (1.0 - exp(pow(clamp(-viewVector.y+0.5,0.0,1.0),2) * -25)));
+	
+	vec3 mC = vec3(fog_coefficientMieR*1e-6, fog_coefficientMieG*1e-6, fog_coefficientMieB*1e-6);
+	
+	sky = calculateAtmosphere((averageSkyCol*4000./2.0), viewVector, vec3(0.0,1.0,0.0), WsunVec, -WsunVec, planetSphere, skyAbsorb, 10, blueNoise());
 
 	// fade atmosphere conditions for rain away when you pass above the cloud plane.
 	float heightRelativeToClouds = clamp(1.0 - max(eyeAltitude - CloudLayer0_height,0.0) / 200.0 ,0.0,1.0);
@@ -270,7 +267,7 @@ if (gl_FragCoord.x > 18. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257){
 		sky *= vec3(0.0, 0.18, 0.35);
 	#endif
 
-  gl_FragData[0] = vec4(sky / 4000.0 * Sky_Brightness, 1.0);
+  gl_FragData[0] = vec4(sky / 4000.0, 1.0);
 }
 
 /// --- Sky + clouds + fog 
@@ -278,26 +275,25 @@ if (gl_FragCoord.x > 18.+257. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257+
 	vec2 p = clamp(floor(gl_FragCoord.xy-vec2(18.+257,1.))/256.+tempOffsets/256.,0.0,1.0);
 	vec3 viewVector = cartToSphere(p);
 
-	WsunVec = normalize(mat3(gbufferModelViewInverse) * sunPosition)  * ( float(sunElevation > 1e-5)*2.0-1.0 );
+	WsunVec = normalize(mat3(gbufferModelViewInverse) * sunPosition) ;// * ( float(sunElevation > 1e-5)*2.0-1.0 );
 
 	vec3 sky = texelFetch2D(colortex4,ivec2(gl_FragCoord.xy)-ivec2(257,0),0).rgb/150.0;	
+	sky = mix(dot(sky, vec3(0.333)) * vec3(0.5), sky,  pow(clamp(viewVector.y+1.0,0.0,1.0),5));
 	
 	vec3 suncol = lightSourceColor;
-	
 	#ifdef ambientLight_only
 		suncol = vec3(0.0);
 	#endif
+	
+	vec3 cloudDepth = vec3(0.0);
+	vec4 clouds = renderClouds(mat3(gbufferModelView)*viewVector*1024., vec2(fract(frameCounter/1.6180339887),1-fract(frameCounter/1.6180339887)), suncol*2.0, skyGroundCol/30.0, cloudDepth);
+	
+	float atmosphereAlpha = 1.0;
+	vec4 VL_Fog = GetVolumetricFog(mat3(gbufferModelView)*viewVector*1024.,  vec2(fract(frameCounter/1.6180339887),1-fract(frameCounter/1.6180339887)), suncol*2.0, skyGroundCol/30.0, averageSkyCol_Clouds*5.0, atmosphereAlpha);
 
-	vec4 clouds = renderClouds(mat3(gbufferModelView)*viewVector*1024., vec2(fract(frameCounter/1.6180339887),1-fract(frameCounter/1.6180339887)), suncol*2.0, skyGroundCol/30.0);
-	sky = sky*clouds.a + clouds.rgb / 5.0; 
-
-	sky = mix(dot(sky,vec3(0.333)) * vec3(0.5), sky,  pow(clamp(viewVector.y+1.0,0.0,1.0),5));
-	vec4 VL_Fog = GetVolumetricFog(mat3(gbufferModelView)*viewVector*1024.,  vec2(fract(frameCounter/1.6180339887),1-fract(frameCounter/1.6180339887)), suncol*1.75, skyGroundCol/30.0);
-
+	sky = sky*clouds.a + clouds.rgb / 5.0;
+	sky *= atmosphereAlpha;
 	sky = sky * VL_Fog.a + VL_Fog.rgb / 5.0;
-
-
-	// if(p.y < 0.05) sky = averageSkyCol_Clouds;
 
 	gl_FragData[0] = vec4(sky,1.0);
 }
@@ -381,7 +377,6 @@ vec3 curr = gl_FragData[0].rgb*150.;
 if(accumuteSpeed < 1.0) mixhistory = 1.0;
 
 gl_FragData[0].rgb = clamp(mix(temp, curr, mixhistory),0.0,65000.);
-
 
 //Exposure values
 if (gl_FragCoord.x > 10. && gl_FragCoord.x < 11.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )

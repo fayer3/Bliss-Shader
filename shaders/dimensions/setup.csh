@@ -15,24 +15,22 @@ const ivec3 workGroups = ivec3(6, 6, 1);
     const vec3 LightColor_RedstoneTorch = vec3(0.939, 0.305, 0.164);
     const vec3 LightColor_SeaPickle = vec3(0.283, 0.394, 0.212);
 
-    #ifdef LPV_COLORED_CANDLES
-        const vec3 LightColor_Candles_Black = vec3(0.200);
-        const vec3 LightColor_Candles_Blue = vec3(0.000, 0.259, 1.000);
-        const vec3 LightColor_Candles_Brown = vec3(0.459, 0.263, 0.149);
-        const vec3 LightColor_Candles_Cyan = vec3(0.000, 0.839, 0.839);
-        const vec3 LightColor_Candles_Gray = vec3(0.329, 0.357, 0.388);
-        const vec3 LightColor_Candles_Green = vec3(0.263, 0.451, 0.000);
-        const vec3 LightColor_Candles_LightBlue = vec3(0.153, 0.686, 1.000);
-        const vec3 LightColor_Candles_LightGray = vec3(0.631, 0.627, 0.624);
-        const vec3 LightColor_Candles_Lime = vec3(0.439, 0.890, 0.000);
-        const vec3 LightColor_Candles_Magenta = vec3(0.757, 0.098, 0.812);
-        const vec3 LightColor_Candles_Orange = vec3(1.000, 0.459, 0.000);
-        const vec3 LightColor_Candles_Pink = vec3(1.000, 0.553, 0.718);
-        const vec3 LightColor_Candles_Purple = vec3(0.569, 0.000, 1.000);
-        const vec3 LightColor_Candles_Red = vec3(0.859, 0.000, 0.000);
-        const vec3 LightColor_Candles_White = vec3(1.000);
-        const vec3 LightColor_Candles_Yellow = vec3(1.000, 0.878, 0.000);
-    #endif
+    const vec3 LightColor_Candles_Black = vec3(0.200);
+    const vec3 LightColor_Candles_Blue = vec3(0.000, 0.259, 1.000);
+    const vec3 LightColor_Candles_Brown = vec3(0.459, 0.263, 0.149);
+    const vec3 LightColor_Candles_Cyan = vec3(0.000, 0.839, 0.839);
+    const vec3 LightColor_Candles_Gray = vec3(0.329, 0.357, 0.388);
+    const vec3 LightColor_Candles_Green = vec3(0.263, 0.451, 0.000);
+    const vec3 LightColor_Candles_LightBlue = vec3(0.153, 0.686, 1.000);
+    const vec3 LightColor_Candles_LightGray = vec3(0.631, 0.627, 0.624);
+    const vec3 LightColor_Candles_Lime = vec3(0.439, 0.890, 0.000);
+    const vec3 LightColor_Candles_Magenta = vec3(0.757, 0.098, 0.812);
+    const vec3 LightColor_Candles_Orange = vec3(1.000, 0.459, 0.000);
+    const vec3 LightColor_Candles_Pink = vec3(1.000, 0.553, 0.718);
+    const vec3 LightColor_Candles_Purple = vec3(0.569, 0.000, 1.000);
+    const vec3 LightColor_Candles_Red = vec3(0.859, 0.000, 0.000);
+    const vec3 LightColor_Candles_White = vec3(1.000);
+    const vec3 LightColor_Candles_Yellow = vec3(1.000, 0.878, 0.000);
 
     uint BuildLpvMask(const in uint north, const in uint east, const in uint south, const in uint west, const in uint up, const in uint down) {
         return east | (west << 1) | (down << 2) | (up << 3) | (south << 4) | (north << 5);
@@ -63,6 +61,10 @@ void main() {
         float mixWeight = 0.0;
         uint mixMask = 0xFFFF;
         vec3 tintColor = vec3(1.0);
+
+        if (blockId == BLOCK_SSS_WEAK || blockId == BLOCK_SSS_WEAK_3) {
+            mixWeight = 1.0;
+        }
 
         switch (blockId) {
             case BLOCK_WATER:
@@ -121,386 +123,321 @@ void main() {
             mixWeight = 0.8;
         }
 
-        switch (blockId) {
         #ifdef LPV_COLORED_CANDLES
-            case BLOCK_CANDLES_PLAIN_LIT_1:
-                lightColor = LightColor_Candles;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_PLAIN_LIT_2:
-                lightColor = LightColor_Candles;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_PLAIN_LIT_3:
-                lightColor = LightColor_Candles;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_PLAIN_LIT_4:
-                lightColor = LightColor_Candles;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+            if (blockId >= BLOCK_CANDLES_PLAIN_LIT_1 && blockId <= BLOCK_CANDLES_YELLOW_LIT_4) {
+                switch (blockId) {
+                    case BLOCK_CANDLES_PLAIN_LIT_1:
+                        lightColor = LightColor_Candles;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_PLAIN_LIT_2:
+                        lightColor = LightColor_Candles;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_PLAIN_LIT_3:
+                        lightColor = LightColor_Candles;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_PLAIN_LIT_4:
+                        lightColor = LightColor_Candles;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_BLACK_LIT_1:
-                lightColor = LightColor_Candles_Black;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_BLACK_LIT_2:
-                lightColor = LightColor_Candles_Black;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_BLACK_LIT_3:
-                lightColor = LightColor_Candles_Black;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_BLACK_LIT_4:
-                lightColor = LightColor_Candles_Black;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_BLACK_LIT_1:
+                        lightColor = LightColor_Candles_Black;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_BLACK_LIT_2:
+                        lightColor = LightColor_Candles_Black;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_BLACK_LIT_3:
+                        lightColor = LightColor_Candles_Black;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_BLACK_LIT_4:
+                        lightColor = LightColor_Candles_Black;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_BLUE_LIT_1:
-                lightColor = LightColor_Candles_Blue;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_BLUE_LIT_2:
-                lightColor = LightColor_Candles_Blue;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_BLUE_LIT_3:
-                lightColor = LightColor_Candles_Blue;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_BLUE_LIT_4:
-                lightColor = LightColor_Candles_Blue;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_BLUE_LIT_1:
+                        lightColor = LightColor_Candles_Blue;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_BLUE_LIT_2:
+                        lightColor = LightColor_Candles_Blue;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_BLUE_LIT_3:
+                        lightColor = LightColor_Candles_Blue;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_BLUE_LIT_4:
+                        lightColor = LightColor_Candles_Blue;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_BROWN_LIT_1:
-                lightColor = LightColor_Candles_Brown;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_BROWN_LIT_2:
-                lightColor = LightColor_Candles_Brown;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_BROWN_LIT_3:
-                lightColor = LightColor_Candles_Brown;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_BROWN_LIT_4:
-                lightColor = LightColor_Candles_Brown;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_BROWN_LIT_1:
+                        lightColor = LightColor_Candles_Brown;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_BROWN_LIT_2:
+                        lightColor = LightColor_Candles_Brown;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_BROWN_LIT_3:
+                        lightColor = LightColor_Candles_Brown;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_BROWN_LIT_4:
+                        lightColor = LightColor_Candles_Brown;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_CYAN_LIT_1:
-                lightColor = LightColor_Candles_Cyan;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_CYAN_LIT_2:
-                lightColor = LightColor_Candles_Cyan;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_CYAN_LIT_3:
-                lightColor = LightColor_Candles_Cyan;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_CYAN_LIT_4:
-                lightColor = LightColor_Candles_Cyan;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_CYAN_LIT_1:
+                        lightColor = LightColor_Candles_Cyan;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_CYAN_LIT_2:
+                        lightColor = LightColor_Candles_Cyan;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_CYAN_LIT_3:
+                        lightColor = LightColor_Candles_Cyan;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_CYAN_LIT_4:
+                        lightColor = LightColor_Candles_Cyan;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_GRAY_LIT_1:
-                lightColor = LightColor_Candles_Gray;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_GRAY_LIT_2:
-                lightColor = LightColor_Candles_Gray;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_GRAY_LIT_3:
-                lightColor = LightColor_Candles_Gray;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_GRAY_LIT_4:
-                lightColor = LightColor_Candles_Gray;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_GRAY_LIT_1:
+                        lightColor = LightColor_Candles_Gray;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_GRAY_LIT_2:
+                        lightColor = LightColor_Candles_Gray;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_GRAY_LIT_3:
+                        lightColor = LightColor_Candles_Gray;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_GRAY_LIT_4:
+                        lightColor = LightColor_Candles_Gray;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_GREEN_LIT_1:
-                lightColor = LightColor_Candles_Green;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_GREEN_LIT_2:
-                lightColor = LightColor_Candles_Green;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_GREEN_LIT_3:
-                lightColor = LightColor_Candles_Green;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_GREEN_LIT_4:
-                lightColor = LightColor_Candles_Green;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_GREEN_LIT_1:
+                        lightColor = LightColor_Candles_Green;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_GREEN_LIT_2:
+                        lightColor = LightColor_Candles_Green;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_GREEN_LIT_3:
+                        lightColor = LightColor_Candles_Green;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_GREEN_LIT_4:
+                        lightColor = LightColor_Candles_Green;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_LIGHT_BLUE_LIT_1:
-                lightColor = LightColor_Candles_LightBlue;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIGHT_BLUE_LIT_2:
-                lightColor = LightColor_Candles_LightBlue;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIGHT_BLUE_LIT_3:
-                lightColor = LightColor_Candles_LightBlue;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIGHT_BLUE_LIT_4:
-                lightColor = LightColor_Candles_LightBlue;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_LIGHT_BLUE_LIT_1:
+                        lightColor = LightColor_Candles_LightBlue;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_LIGHT_BLUE_LIT_2:
+                        lightColor = LightColor_Candles_LightBlue;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_LIGHT_BLUE_LIT_3:
+                        lightColor = LightColor_Candles_LightBlue;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_LIGHT_BLUE_LIT_4:
+                        lightColor = LightColor_Candles_LightBlue;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_LIGHT_GRAY_LIT_1:
-                lightColor = LightColor_Candles_LightGray;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIGHT_GRAY_LIT_2:
-                lightColor = LightColor_Candles_LightGray;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIGHT_GRAY_LIT_3:
-                lightColor = LightColor_Candles_LightGray;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIGHT_GRAY_LIT_4:
-                lightColor = LightColor_Candles_LightGray;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_LIGHT_GRAY_LIT_1:
+                        lightColor = LightColor_Candles_LightGray;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_LIGHT_GRAY_LIT_2:
+                        lightColor = LightColor_Candles_LightGray;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_LIGHT_GRAY_LIT_3:
+                        lightColor = LightColor_Candles_LightGray;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_LIGHT_GRAY_LIT_4:
+                        lightColor = LightColor_Candles_LightGray;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_LIME_LIT_1:
-                lightColor = LightColor_Candles_Lime;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIME_LIT_2:
-                lightColor = LightColor_Candles_Lime;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIME_LIT_3:
-                lightColor = LightColor_Candles_Lime;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIME_LIT_4:
-                lightColor = LightColor_Candles_Lime;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_LIME_LIT_1:
+                        lightColor = LightColor_Candles_Lime;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_LIME_LIT_2:
+                        lightColor = LightColor_Candles_Lime;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_LIME_LIT_3:
+                        lightColor = LightColor_Candles_Lime;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_LIME_LIT_4:
+                        lightColor = LightColor_Candles_Lime;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_MAGENTA_LIT_1:
-                lightColor = LightColor_Candles_Magenta;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_MAGENTA_LIT_2:
-                lightColor = LightColor_Candles_Magenta;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_MAGENTA_LIT_3:
-                lightColor = LightColor_Candles_Magenta;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_MAGENTA_LIT_4:
-                lightColor = LightColor_Candles_Magenta;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_MAGENTA_LIT_1:
+                        lightColor = LightColor_Candles_Magenta;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_MAGENTA_LIT_2:
+                        lightColor = LightColor_Candles_Magenta;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_MAGENTA_LIT_3:
+                        lightColor = LightColor_Candles_Magenta;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_MAGENTA_LIT_4:
+                        lightColor = LightColor_Candles_Magenta;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_ORANGE_LIT_1:
-                lightColor = LightColor_Candles_Orange;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_ORANGE_LIT_2:
-                lightColor = LightColor_Candles_Orange;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_ORANGE_LIT_3:
-                lightColor = LightColor_Candles_Orange;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_ORANGE_LIT_4:
-                lightColor = LightColor_Candles_Orange;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_ORANGE_LIT_1:
+                        lightColor = LightColor_Candles_Orange;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_ORANGE_LIT_2:
+                        lightColor = LightColor_Candles_Orange;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_ORANGE_LIT_3:
+                        lightColor = LightColor_Candles_Orange;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_ORANGE_LIT_4:
+                        lightColor = LightColor_Candles_Orange;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_PINK_LIT_1:
-                lightColor = LightColor_Candles_Pink;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_PINK_LIT_2:
-                lightColor = LightColor_Candles_Pink;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_PINK_LIT_3:
-                lightColor = LightColor_Candles_Pink;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_PINK_LIT_4:
-                lightColor = LightColor_Candles_Pink;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_PINK_LIT_1:
+                        lightColor = LightColor_Candles_Pink;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_PINK_LIT_2:
+                        lightColor = LightColor_Candles_Pink;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_PINK_LIT_3:
+                        lightColor = LightColor_Candles_Pink;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_PINK_LIT_4:
+                        lightColor = LightColor_Candles_Pink;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_PURPLE_LIT_1:
-                lightColor = LightColor_Candles_Purple;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_PURPLE_LIT_2:
-                lightColor = LightColor_Candles_Purple;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_PURPLE_LIT_3:
-                lightColor = LightColor_Candles_Purple;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_PURPLE_LIT_4:
-                lightColor = LightColor_Candles_Purple;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_PURPLE_LIT_1:
+                        lightColor = LightColor_Candles_Purple;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_PURPLE_LIT_2:
+                        lightColor = LightColor_Candles_Purple;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_PURPLE_LIT_3:
+                        lightColor = LightColor_Candles_Purple;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_PURPLE_LIT_4:
+                        lightColor = LightColor_Candles_Purple;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_RED_LIT_1:
-                lightColor = LightColor_Candles_Red;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_RED_LIT_2:
-                lightColor = LightColor_Candles_Red;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_RED_LIT_3:
-                lightColor = LightColor_Candles_Red;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_RED_LIT_4:
-                lightColor = LightColor_Candles_Red;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_RED_LIT_1:
+                        lightColor = LightColor_Candles_Red;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_RED_LIT_2:
+                        lightColor = LightColor_Candles_Red;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_RED_LIT_3:
+                        lightColor = LightColor_Candles_Red;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_RED_LIT_4:
+                        lightColor = LightColor_Candles_Red;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_WHITE_LIT_1:
-                lightColor = LightColor_Candles_White;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_WHITE_LIT_2:
-                lightColor = LightColor_Candles_White;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_WHITE_LIT_3:
-                lightColor = LightColor_Candles_White;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_WHITE_LIT_4:
-                lightColor = LightColor_Candles_White;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_WHITE_LIT_1:
+                        lightColor = LightColor_Candles_White;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_WHITE_LIT_2:
+                        lightColor = LightColor_Candles_White;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_WHITE_LIT_3:
+                        lightColor = LightColor_Candles_White;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_WHITE_LIT_4:
+                        lightColor = LightColor_Candles_White;
+                        lightRange = 12.0;
+                        break;
 
-            case BLOCK_CANDLES_YELLOW_LIT_1:
-                lightColor = LightColor_Candles_Yellow;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_YELLOW_LIT_2:
-                lightColor = LightColor_Candles_Yellow;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_YELLOW_LIT_3:
-                lightColor = LightColor_Candles_Yellow;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_YELLOW_LIT_4:
-                lightColor = LightColor_Candles_Yellow;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+                    case BLOCK_CANDLES_YELLOW_LIT_1:
+                        lightColor = LightColor_Candles_Yellow;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_YELLOW_LIT_2:
+                        lightColor = LightColor_Candles_Yellow;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_YELLOW_LIT_3:
+                        lightColor = LightColor_Candles_Yellow;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_YELLOW_LIT_4:
+                        lightColor = LightColor_Candles_Yellow;
+                        lightRange = 12.0;
+                        break;
+                }
         #else
-            case BLOCK_CANDLES_LIT_1:
-                lightColor = LightColor_Candles;
-                lightRange = 3.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIT_2:
-                lightColor = LightColor_Candles;
-                lightRange = 6.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIT_3:
-                lightColor = LightColor_Candles;
-                lightRange = 9.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_CANDLES_LIT_4:
-                lightColor = LightColor_Candles;
-                lightRange = 12.0;
-                mixWeight = 1.0;
-                break;
+            if (blockId >= BLOCK_CANDLES_LIT_1 && blockId <= BLOCK_CANDLES_LIT_4) {
+                switch (blockId) {
+                    case BLOCK_CANDLES_LIT_1:
+                        lightColor = LightColor_Candles;
+                        lightRange = 3.0;
+                        break;
+                    case BLOCK_CANDLES_LIT_2:
+                        lightColor = LightColor_Candles;
+                        lightRange = 6.0;
+                        break;
+                    case BLOCK_CANDLES_LIT_3:
+                        lightColor = LightColor_Candles;
+                        lightRange = 9.0;
+                        break;
+                    case BLOCK_CANDLES_LIT_4:
+                        lightColor = LightColor_Candles;
+                        lightRange = 12.0;
+                        break;
+                }
         #endif
+
+            mixWeight = 1.0;
         }
 
         if (blockId == ITEM_BLAZE_ROD) {
@@ -508,7 +445,8 @@ void main() {
         }
 
         if (blockId == BLOCK_CAVE_VINE_BERRIES || blockId == ITEM_GLOW_BERRIES) {
-            lightColor = vec3(0.651, 0.369, 0.157);
+            lightColor = vec3(1.0, 1.0, 0.5);
+            
             lightRange = 14.0;
             mixWeight = 1.0;
         }
@@ -564,6 +502,12 @@ void main() {
             mixWeight = 1.0;
         }
 
+        if (blockId == BLOCK_FIRE_FLIES) {
+            lightColor = vec3(0.729, 0.639, 0.31);
+            lightRange = 2.0;
+            mixWeight = 1.0;
+        }
+
         if (blockId == BLOCK_FROGLIGHT_OCHRE || blockId == ITEM_FROGLIGHT_OCHRE) {
             lightColor = vec3(0.768, 0.648, 0.108);
             lightRange = 15.0;
@@ -585,7 +529,7 @@ void main() {
         }
 
         if (blockId == BLOCK_GLOW_LICHEN || blockId == ITEM_GLOW_LICHEN) {
-            lightColor = vec3(0.092, 0.217, 0.126);
+            lightColor = vec3(0.1, 0.2, 0.12);
             lightRange = 7.0;
         }
 
@@ -827,26 +771,72 @@ void main() {
         }
 
         if (blockId == BLOCK_TORCH || blockId == ITEM_TORCH) {
-            lightColor = vec3(1.0, 0.6, 0.1);
+            lightColor = vec3(TORCH_R, TORCH_G, TORCH_B);
             lightRange = 14.0;
             mixWeight = 0.8;
+        }
+
+        if (blockId >= BLOCK_LAMP_LIT_BLACK && blockId <= BLOCK_LAMP_LIT_YELLOW) {
+            lightRange = 15.0;
+            mixWeight = 0.25;
+
+            switch (blockId) {
+                case BLOCK_LAMP_LIT_BLACK:
+                    lightColor = LightColor_Candles_Black;
+                    break;
+                case BLOCK_LAMP_LIT_BLUE:
+                    lightColor = LightColor_Candles_Blue;
+                    break;
+                case BLOCK_LAMP_LIT_BROWN:
+                    lightColor = LightColor_Candles_Brown;
+                    break;
+                case BLOCK_LAMP_LIT_CYAN:
+                    lightColor = LightColor_Candles_Cyan;
+                    break;
+                case BLOCK_LAMP_LIT_GRAY:
+                    lightColor = LightColor_Candles_Gray;
+                    break;
+                case BLOCK_LAMP_LIT_GREEN:
+                    lightColor = LightColor_Candles_Green;
+                    break;
+                case BLOCK_LAMP_LIT_LIGHT_BLUE:
+                    lightColor = LightColor_Candles_LightBlue;
+                    break;
+                case BLOCK_LAMP_LIT_LIGHT_GRAY:
+                    lightColor = LightColor_Candles_LightGray;
+                    break;
+                case BLOCK_LAMP_LIT_LIME:
+                    lightColor = LightColor_Candles_Lime;
+                    break;
+                case BLOCK_LAMP_LIT_MAGENTA:
+                    lightColor = LightColor_Candles_Magenta;
+                    break;
+                case BLOCK_LAMP_LIT_ORANGE:
+                    lightColor = LightColor_Candles_Orange;
+                    break;
+                case BLOCK_LAMP_LIT_PINK:
+                    lightColor = LightColor_Candles_Pink;
+                    break;
+                case BLOCK_LAMP_LIT_PURPLE:
+                    lightColor = LightColor_Candles_Purple;
+                    break;
+                case BLOCK_LAMP_LIT_RED:
+                    lightColor = LightColor_Candles_Red;
+                    break;
+                case BLOCK_LAMP_LIT_WHITE:
+                    lightColor = LightColor_Candles_White;
+                    break;
+                case BLOCK_LAMP_LIT_YELLOW:
+                    lightColor = LightColor_Candles_Yellow;
+                    break;
+            }
         }
 
         // reflective translucents / glass
 
         switch (blockId) {
-            case BLOCK_HONEY:
-                tintColor = vec3(0.984, 0.733, 0.251);
-                mixWeight = 1.0;
-                break;
-            case BLOCK_NETHER_PORTAL:
-                lightColor = vec3(0.502, 0.165, 0.831);
-                tintColor = vec3(0.502, 0.165, 0.831);
-                lightRange = 11.0;
-                mixWeight = 1.0;
-                break;
-            case BLOCK_SLIME:
-                tintColor = vec3(0.408, 0.725, 0.329);
+            case BLOCK_GLASS:
+                tintColor = vec3(1.0);
                 mixWeight = 1.0;
                 break;
             case BLOCK_GLASS_BLACK:
@@ -913,11 +903,34 @@ void main() {
                 tintColor = vec3(0.965, 0.965, 0.123);
                 mixWeight = 1.0;
                 break;
+            case BLOCK_HONEY:
+                tintColor = vec3(0.984, 0.733, 0.251);
+                mixWeight = 1.0;
+                break;
+            case BLOCK_NETHER_PORTAL:
+                lightColor = vec3(0.502, 0.165, 0.831);
+                tintColor = vec3(0.502, 0.165, 0.831);
+                lightRange = 11.0;
+                mixWeight = 1.0;
+                break;
+            case BLOCK_SLIME:
+                tintColor = vec3(0.408, 0.725, 0.329);
+                mixWeight = 1.0;
+                break;
 
         // LPV shapes
 
             case BLOCK_LPV_IGNORE:
-                mixWeight = 1.0;
+                mixWeight = 1.00;
+                break;
+            case BLOCK_LPV_MIN:
+                mixWeight = 0.75;
+                break;
+            case BLOCK_LPV_MED:
+                mixWeight = 0.50;
+                break;
+            case BLOCK_LPV_MAX:
+                mixWeight = 0.25;
                 break;
 
             case BLOCK_CARPET:
@@ -942,16 +955,6 @@ void main() {
                 mixWeight = 0.8;
                 break;
 
-            case BLOCK_FENCE:
-            case BLOCK_FENCE_GATE:
-                mixWeight = 0.7;
-                break;
-            case BLOCK_FLOWER_POT:
-                mixWeight = 0.7;
-                break;
-            case BLOCK_IRON_BARS:
-                mixWeight = 0.6;
-                break;
             case BLOCK_PRESSURE_PLATE:
                 mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 1u, 0u);
                 mixWeight = 0.9;
@@ -962,6 +965,7 @@ void main() {
                 mixWeight = 0.5;
                 break;
             case BLOCK_SLAB_BOTTOM:
+            case BLOCK_SNOW_LAYERS:
                 mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 1u, 0u);
                 mixWeight = 0.5;
                 break;
@@ -990,6 +994,73 @@ void main() {
                 mixMask = BuildLpvMask(1u, 1u, 1u, 0u, 1u, 1u);
                 mixWeight = 0.8;
                 break;
+        }
+
+        // STAIRS
+        if (blockId >= BLOCK_STAIRS_BOTTOM_N && blockId <= BLOCK_STAIRS_TOP_OUTER_S_W) {
+            mixWeight = 0.25;
+
+            switch (blockId) {
+                case BLOCK_STAIRS_BOTTOM_N:
+                    mixMask = BuildLpvMask(1u, 1u, 0u, 1u, 1u, 0u);
+                    break;
+                case BLOCK_STAIRS_BOTTOM_E:
+                    mixMask = BuildLpvMask(1u, 1u, 1u, 0u, 1u, 0u);
+                    break;
+                case BLOCK_STAIRS_BOTTOM_S:
+                    mixMask = BuildLpvMask(0u, 1u, 1u, 1u, 1u, 0u);
+                    break;
+                case BLOCK_STAIRS_BOTTOM_W:
+                    mixMask = BuildLpvMask(1u, 0u, 1u, 1u, 1u, 0u);
+                    break;
+                case BLOCK_STAIRS_BOTTOM_INNER_S_E:
+                    mixMask = BuildLpvMask(0u, 1u, 1u, 0u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_BOTTOM_INNER_S_W:
+                    mixMask = BuildLpvMask(0u, 0u, 1u, 1u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_BOTTOM_INNER_N_W:
+                    mixMask = BuildLpvMask(1u, 0u, 0u, 1u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_BOTTOM_INNER_N_E:
+                    mixMask = BuildLpvMask(1u, 1u, 0u, 0u, 0u, 1u);
+                    break;
+            }
+
+            if (blockId >= BLOCK_STAIRS_BOTTOM_OUTER_N_W && blockId <= BLOCK_STAIRS_BOTTOM_OUTER_S_W) {
+                mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 0u, 1u);
+            }
+
+            switch (blockId) {
+                case BLOCK_STAIRS_TOP_N:
+                    mixMask = BuildLpvMask(1u, 1u, 0u, 1u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_TOP_E:
+                    mixMask = BuildLpvMask(1u, 1u, 1u, 0u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_TOP_S:
+                    mixMask = BuildLpvMask(0u, 1u, 1u, 1u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_TOP_W:
+                    mixMask = BuildLpvMask(1u, 0u, 1u, 1u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_TOP_INNER_S_E:
+                    mixMask = BuildLpvMask(0u, 1u, 1u, 0u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_TOP_INNER_S_W:
+                    mixMask = BuildLpvMask(0u, 0u, 1u, 1u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_TOP_INNER_N_W:
+                    mixMask = BuildLpvMask(1u, 0u, 0u, 1u, 0u, 1u);
+                    break;
+                case BLOCK_STAIRS_TOP_INNER_N_E:
+                    mixMask = BuildLpvMask(1u, 1u, 0u, 0u, 0u, 1u);
+                    break;
+            }
+
+            if (blockId >= BLOCK_STAIRS_TOP_OUTER_N_W && blockId <= BLOCK_STAIRS_TOP_OUTER_S_W) {
+                mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 0u, 1u);
+            }
         }
 
         // WALL
@@ -1054,12 +1125,12 @@ void main() {
         }
 
         if (blockId == ENTITY_SPECTRAL_ARROW) {
-            lightColor = vec3(0.0, 1.0, 0.0);
+            lightColor = vec3(0.839, 0.541, 0.2);
             lightRange = 8.0;
             mixWeight = 1.0;
         }
 
-        if (blockId == 250) {
+        if (blockId == 266) {
             lightColor = vec3(1.0);
             lightRange = 3.0;
         }
@@ -1068,11 +1139,15 @@ void main() {
         // hack to increase light (if set)
         if (lightRange > 0.0) lightRange += 1.0;
 
-        // apply saturation changes to light and tint colors
+        // apply saturation changes to light color
         const float saturationF = LPV_SATURATION / 100.0;
         mat4 matSaturation = GetSaturationMatrix(saturationF);
         lightColor = (matSaturation * vec4(lightColor, 1.0)).rgb;
-        tintColor = (matSaturation * vec4(tintColor, 1.0)).rgb;
+
+        // apply saturation changes to tint color
+        const float tintSaturationF = LPV_TINT_SATURATION / 100.0;
+        mat4 matTintSaturation = GetSaturationMatrix(tintSaturationF);
+        tintColor = (matTintSaturation * vec4(tintColor, 1.0)).rgb;
 
         // lazy fix for migrating from mixWeight to tintColor
         tintColor *= mixWeight;
