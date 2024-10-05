@@ -59,6 +59,10 @@ out vec2 Ftexcoord;
 	uniform usampler1D texCloseLights;
 	uniform vec3 cameraPosition;
 	uniform vec3 previousCameraPosition;
+	#ifdef LPV_HAND_SHADOWS
+		uniform vec3 relativeEyePosition;
+		uniform vec3 playerLookVector;
+	#endif
 #endif
 
 void main() {
@@ -70,6 +74,12 @@ void main() {
 			uint id;
 			if (getLightData(data, dist, pos, id)) {
 				vec3 lightPos = -fract(previousCameraPosition) + (previousCameraPosition - cameraPosition) + vec3(pos) - 14.5;
+				#ifdef LPV_HAND_SHADOWS
+					if (dist < 0.0001) {
+						vec2 viewDir = normalize(playerLookVector.xz) * 0.25;
+						lightPos = -relativeEyePosition + vec3(viewDir.x, 0, viewDir.y);
+					}
+				#endif
 				
 				vec3 dists = vec3(length(worldPos[0] - lightPos), length(worldPos[1] - lightPos), length(worldPos[2] - lightPos));
 				if (
