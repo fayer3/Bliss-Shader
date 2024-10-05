@@ -26,6 +26,10 @@
 
         uniform usampler1D texCloseLights;
         uniform sampler2DShadow shadowtex0;
+        #ifdef LPV_HAND_SHADOWS
+            uniform vec3 relativeEyePosition;
+            uniform vec3 playerLookVector;
+        #endif
         #ifdef LPV_COLOR_SHADOWS
             uniform sampler2DShadow shadowtex1;
             uniform sampler2D shadowcolor0;
@@ -115,7 +119,13 @@ vec3 doBlockLightLighting(
                 ivec3 pos;
                 uint blockId;
                 if (getLightData(data, dist, pos, blockId)) {
-                    vec3 lightPos = -fract(previousCameraPosition) - cameraPosition+previousCameraPosition + vec3(pos) - 14.5;
+                    vec3 lightPos = -fract(previousCameraPosition) - cameraPosition + previousCameraPosition + vec3(pos) - 14.5;
+                    #ifdef LPV_HAND_SHADOWS
+                        if (dist < 0.0001) {
+                            vec2 viewDir = normalize(playerLookVector.xz) * 0.25;
+                            lightPos = -relativeEyePosition + vec3(viewDir.x, 0, viewDir.y);
+                        }
+                    #endif
                     int face = 0;
                     vec3 dir = playerPos - lightPos;
                     float d = dot(-normalWorld, normalize(dir-0.1));

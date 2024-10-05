@@ -19,6 +19,24 @@ const ivec3 workGroups = ivec3(2, 1, 1);
 			
 			return imageLoad(imgVoxelMask, voxelPos).r;
 		}
+
+		#ifdef LPV_HAND_SHADOWS
+			uniform int heldItemId;
+			uniform int heldItemId2;
+			void storeHandLight(const in int itemId, inout uint[LPV_SHADOWS_LIGHT_COUNT] allData) {
+				uint blockData = imageLoad(imgBlockData, itemId).r;
+				if (unpackUnorm4x8(blockData).a > 0.0) {
+					uvec3 posU = uvec3(15);
+					// no distance for hand light
+					uint data = posU.x << 21 | posU.y << 16 | posU.z << 11 | itemId;
+					for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
+						uint minData = min(allData[i], data);
+						if (minData == data) data = allData[i];
+						allData[i] = minData;
+					}
+				}
+			}
+		#endif
 	#endif
 #endif
 
@@ -55,6 +73,18 @@ void main() {
 					}
 				}
 			}
+			#ifdef LPV_HAND_SHADOWS
+				// only do this once
+				if (xyPos.xy == uvec2(16)) {
+					if (heldItemId > 0) {
+						storeHandLight(heldItemId, allData);
+					}
+
+					if (heldItemId2 > 0) {
+						storeHandLight(heldItemId2, allData);
+					}
+				}
+			#endif
 			for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
 				imageStore(imgSortLights, ivec3(xyPos.xy, i), uvec4(allData[i]));
 			}
