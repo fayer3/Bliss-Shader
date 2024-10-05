@@ -44,6 +44,10 @@ uniform vec3 shadowLightVec;
 uniform float shadowMaxProj;
 attribute vec4 mc_midTexCoord;
 varying vec4 color;
+#ifdef LPV_SHADOWS
+	varying vec3 worldPos;
+	flat varying vec3 worldNormal;
+#endif
 
 attribute vec4 mc_Entity;
 uniform int blockEntityId;
@@ -204,6 +208,15 @@ void main() {
 
 	#if defined IS_LPV_ENABLED || defined WAVY_PLANTS
 		vec3 playerpos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
+	#endif
+	
+	#ifdef LPV_SHADOWS
+		#ifdef WAVY_PLANTS
+			worldPos = playerpos;
+		#else
+			worldPos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
+		#endif
+		worldNormal = mat3(shadowModelViewInverse) * gl_NormalMatrix * gl_Normal;
 	#endif
 
 	#if defined IS_LPV_ENABLED && defined MC_GL_EXT_shader_image_load_store

@@ -195,6 +195,10 @@ vec4 GetVolumetricFog(
 			vec3 sh = vec3(1.0);
 			if (abs(shadowPos.x) < 1.0-0.5/2048. && abs(shadowPos.y) < 1.0-0.5/2048){
 				shadowPos = shadowPos*vec3(0.5,0.5,0.5/6.0)+0.5;
+				
+				#ifdef LPV_SHADOWS
+						shadowPos.xy *= 0.8;
+				#endif
 
 				#ifdef TRANSLUCENT_COLORED_SHADOWS
 					sh = vec3(shadow2D(shadowtex0, shadowPos).x);

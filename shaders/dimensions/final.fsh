@@ -20,6 +20,15 @@ uniform int hideGUI;
 #include "/lib/res_params.glsl"
 
 
+#if DEBUG_VIEW == debug_LIGHTS && defined LPV_SHADOWS
+  uniform usampler1D texCloseLights;
+  uniform usampler3D texSortLights;
+  
+  #include "/lib/text.glsl"
+  #include "/lib/cube/lightData.glsl"
+#endif
+
+
 float interleaved_gradientNoise(){
 	vec2 coord = gl_FragCoord.xy;
 	float noise = fract(52.9829189*fract(0.06711056*coord.x + 0.00583715*coord.y));
@@ -106,6 +115,49 @@ void main() {
   #ifdef CAMERA_GRIDLINES
     doCameraGridLines(COLOR, texcoord);
   #endif
+
+  #if DEBUG_VIEW == debug_LIGHTS
+    beginText(ivec2(gl_FragCoord.xy * 0.25), ivec2(0, viewHeight*0.25));
+    for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
+      uint data = texelFetch(texCloseLights, i, 0).r;
+      printString((_L, _i, _g, _h, _t, _space));
+      printInt(i);
+      float dist;
+      ivec3 pos;
+      uint id;
+      if (!getLightData(data, dist, pos, id)) {
+        printString((_colon, _space, _n, _u, _l, _l));
+      } else {
+        printString((_colon, _space, _d, _colon, _space));
+        printFloat(dist);
+        printString((_comma, _space, _x, _colon, _space));
+        printInt(pos.x - 15);
+        printString((_comma, _space, _y, _colon, _space));
+        printInt(pos.y - 15);
+        printString((_comma, _space, _z, _colon, _space));
+        printInt(pos.z - 15);
+        printString((_comma, _space, _i, _d, _colon, _space));
+        printInt(int(id));
+      }
+      printLine();
+    }
+    endText(COLOR);
+    
+    int curLight = int(frameTimeCounter * 2.0) % LPV_SHADOWS_LIGHT_COUNT;
+    ivec3 coords = ivec3((texcoord - vec2(0.75, 0)) * vec2(4.0, 2.0) * textureSize(texSortLights, 0).xy, curLight);
+    if(texcoord.x > 0.75 && texcoord.y < 0.5) {
+      COLOR.rgb = vec3(texelFetch(texSortLights, coords, 0).rgb / 4294967295.0);
+    }
+    
+    beginText(ivec2(gl_FragCoord.xy * 0.25), ivec2(viewWidth *  0.19, viewHeight * 0.135));
+    printString((_L, _i, _g, _h, _t, _colon, _space));
+    printInt(curLight);
+    endText(COLOR);
+    
+    vec2 shadowUV = texcoord * vec2(4.0, 2.0);
+    if(shadowUV.x < 1.0 && shadowUV.y < 1.0)COLOR = texture2D(shadowcolor1,shadowUV).rgb;
+  #endif
+  
 
   #if DEBUG_VIEW == debug_SHADOWMAP
 
