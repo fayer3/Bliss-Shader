@@ -1041,6 +1041,10 @@ void main() {
 		#endif
 
 		projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5) ;
+		
+		#ifdef LPV_SHADOWS
+			projectedShadowPosition.xy *= 0.8;
+		#endif
 
 		float ShadowAlpha = 0.0; // this is for subsurface scattering later.
 		Shadows = ComputeShadowMap(projectedShadowPosition, distortFactor, noise_2, filteredShadow.x, flatNormNdotL, shadowMapFalloff, DirectLightColor, ShadowAlpha, LabSSS > 0.0);
@@ -1159,7 +1163,7 @@ void main() {
 			const vec3 lpvPos = vec3(0.0);
 		#endif
 
-		vec3 blockLightColor = doBlockLightLighting( vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, exposure, feetPlayerPos, lpvPos);
+		vec3 blockLightColor = doBlockLightLighting( vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, exposure, feetPlayerPos, lpvPos, viewToWorld(FlatNormals));
 		Indirect_lighting += blockLightColor;
 
 	/////////////////////////////////////////////////////////////////////////////////////
