@@ -153,9 +153,6 @@ void main() {
             vec4 lightColorRange = unpackUnorm4x8(blockData.r);
             lightColor = srgbToLinear(lightColorRange.rgb);
             lightRange = lightColorRange.a * 255.0;
-            #ifdef LPV_SHADOWS
-				if (lightSharedData[index]) lightValue.b *= LPV_SHADOWS_LIGHT_MULT;
-			#endif
             vec4 tintColorMask = unpackUnorm4x8(blockData.g);
             tintColor = srgbToLinear(tintColorMask.rgb);
             mixMask = (blockData.g >> 24) & 0xFFFF;
@@ -172,6 +169,9 @@ void main() {
         if (lightRange > 0.0) {
             vec3 hsv = RgbToHsv(lightColor);
             hsv.z = exp2(lightRange) - 1.0;
+            #ifdef LPV_SHADOWS
+                if (lightSharedData[index]) hsv.z *= LPV_SHADOWS_LIGHT_MULT;
+            #endif
             lightValue.rgb += HsvToRgb(hsv);
         }
 
