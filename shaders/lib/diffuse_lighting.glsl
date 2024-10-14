@@ -138,7 +138,7 @@ vec3 doBlockLightLighting(
                             const float bias = (3072.0 / shadowMapResolution) * 0.05;
                             vec3 pos = worldToCube(dir + normalWorld * (0.05 + bias - bias * d), face);
                             float blend = (1.0 - dist / lightColorRange.a) / (1.0 + dist * -0.3 + dist * dist * 0.4);
-                            blockLight += d * lightColorRange.rgb * getCubeShadow(pos, face, i) * blend;
+                            blockLight += d * srgbToLinear(lightColorRange.rgb) * getCubeShadow(pos, face, i) * blend;
                         }
                     }
                 } else {
