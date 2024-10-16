@@ -7,6 +7,9 @@
         uvec2 blockData = texelFetch(texBlockData, itemId, 0).rg;
         vec4 lightColorRange = unpackUnorm4x8(blockData.r);
         lightColor = srgbToLinear(lightColorRange.rgb);
+        #if defined LPV_SHADOWS && defined LPV_HAND_SHADOWS
+            lightColor *= LPV_SHADOWS_LIGHT_MULT;
+        #endif
         lightRange = lightColorRange.a * 255.0;
 
         if (lightRange > 0.0) {
