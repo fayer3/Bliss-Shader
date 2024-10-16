@@ -25,14 +25,16 @@
         #include "/lib/cube/lightData.glsl"
 
         uniform usampler1D texCloseLights;
-        uniform sampler2DShadow shadowtex0;
         #ifdef LPV_HAND_SHADOWS
             uniform vec3 relativeEyePosition;
             uniform vec3 playerLookVector;
         #endif
-        #ifdef LPV_COLOR_SHADOWS
-            uniform sampler2DShadow shadowtex1;
-            uniform sampler2D shadowcolor0;
+        #if !defined TRANSLUCENT_COLORED_SHADOWS || defined DAMAGE_BLOCK_EFFECT
+            uniform sampler2DShadow shadowtex0;
+            #ifdef LPV_COLOR_SHADOWS
+                uniform sampler2DShadow shadowtex1;
+                uniform sampler2D shadowcolor0;
+            #endif
         #endif
         
         vec3 worldToCube(vec3 worldPos, out int faceIndex) {
