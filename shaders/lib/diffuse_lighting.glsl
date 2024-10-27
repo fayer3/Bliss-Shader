@@ -32,7 +32,7 @@
             uniform vec3 relativeEyePosition;
             uniform vec3 playerLookVector;
         #endif
-        #if !defined TRANSLUCENT_COLORED_SHADOWS || defined DAMAGE_BLOCK_EFFECT
+        #if !defined TRANSLUCENT_COLORED_SHADOWS || defined DAMAGE_BLOCK_EFFECT || !defined OVERWORLD_SHADER
             uniform sampler2DShadow shadowtex0;
             #ifdef LPV_COLOR_SHADOWS
                 uniform sampler2DShadow shadowtex1;

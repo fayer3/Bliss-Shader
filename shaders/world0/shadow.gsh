@@ -5,6 +5,8 @@ layout (triangle_strip) out;
 
 #include "/lib/settings.glsl"
 
+#define OVERWORLD_SHADER
+
 #ifdef LPV_SHADOWS
 	// limit vertex output to light count to reduce overhead
 	// can be slow when the shader wants to output too many vertices, even if they aren't outputted

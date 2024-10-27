@@ -44,6 +44,12 @@ Read the terms of modification and sharing before changing something below pleas
 	#include "/lib/voxel_write.glsl"
 #endif
 
+#ifdef LPV_SHADOWS
+	out vec2 texcoord;
+	out vec3 worldPos;
+	flat out vec3 worldNormal;
+#endif
+
 
 void main() {
 	#if defined IS_LPV_ENABLED && defined MC_GL_EXT_shader_image_load_store
@@ -55,6 +61,12 @@ void main() {
 		#endif
 
 		PopulateShadowVoxel(playerpos);
+		
+		#ifdef LPV_SHADOWS
+			texcoord = gl_MultiTexCoord0.xy;
+			worldPos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
+			worldNormal = mat3(shadowModelViewInverse) * gl_NormalMatrix * gl_Normal;
+		#endif
 	#endif
 
 	gl_Position = vec4(-1.0);

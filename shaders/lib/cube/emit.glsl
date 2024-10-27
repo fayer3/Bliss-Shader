@@ -8,7 +8,7 @@ void emitCubemap(mat4 directionMatrix, vec2 offset, vec3 lightPosition) {
 	
 	if ((positions[0].x < positions[0].w || (positions[1].x) < positions[1].w || (positions[2].x) < positions[2].w) && (positions[0].x > -positions[0].w || (positions[1].x) > -positions[1].w || (positions[2].x) > -positions[2].w)) {
 		for (int i = 0; i < 3; i++) {
-			#ifdef TRANSLUCENT_COLORED_SHADOWS
+			#if defined OVERWORLD_SHADER && defined TRANSLUCENT_COLORED_SHADOWS
 				Fcolor = color[i].rgb;
 			#endif
 			// move vertex to cube face
