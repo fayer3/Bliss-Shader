@@ -4,11 +4,15 @@
 #include "/lib/settings.glsl"
 
 flat varying int water;
-varying vec2 texcoord;
+varying vec3 color;
 
 varying float overdrawCull;
 
 uniform sampler2D tex;
+
+#ifdef LPV_SHADOWS
+	#include "/lib/cube/cubeData.glsl"
+#endif
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -27,5 +31,12 @@ void main() {
         return;
     }
     
-	gl_FragData[0] = texture2D(tex, texcoord.xy);
+    #ifdef LPV_SHADOWS
+        if (any(greaterThanEqual(floor(gl_FragCoord.xy), renderBounds[4]))) {
+            discard;
+            return;
+        }
+    #endif
+    
+	gl_FragData[0] = vec4(color, 1.0);
 }

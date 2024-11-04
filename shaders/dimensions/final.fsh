@@ -116,7 +116,7 @@ void main() {
     doCameraGridLines(COLOR, texcoord);
   #endif
 
-  #if DEBUG_VIEW == debug_LIGHTS
+  #if DEBUG_VIEW == debug_LIGHTS && defined LPV_SHADOWS
     beginText(ivec2(gl_FragCoord.xy * 0.25), ivec2(0, viewHeight*0.25));
     for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT; i++) {
       uint data = texelFetch(texCloseLights, i, 0).r;
